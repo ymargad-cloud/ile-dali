@@ -613,155 +613,244 @@ document.addEventListener('DOMContentLoaded',init);
 .music-btn{
   position:fixed;bottom:62px;right:12px;z-index:200;
   width:44px;height:44px;border-radius:50%;
-  background:linear-gradient(135deg,#fff8cc,#f9c621);
-  border:3px solid #d9a000;
-  box-shadow:0 4px 0 #d9a000,0 6px 12px rgba(0,0,0,.2);
+  background:linear-gradient(135deg,#2a0a3a,#6a0dad);
+  border:3px solid #9b59f5;
+  box-shadow:0 4px 0 #4a0080,0 6px 12px rgba(0,0,0,.4);
   display:flex;align-items:center;justify-content:center;
   font-size:20px;cursor:pointer;
   transition:transform .15s;
+  animation:glowPulse 2s ease-in-out infinite;
+}
+@keyframes glowPulse{
+  0%,100%{box-shadow:0 4px 0 #4a0080,0 6px 12px rgba(0,0,0,.4),0 0 8px rgba(155,89,245,.4);}
+  50%{box-shadow:0 4px 0 #4a0080,0 6px 12px rgba(0,0,0,.4),0 0 18px rgba(155,89,245,.8);}
 }
 .music-btn:active{transform:scale(.9);}
-.music-btn.muted{background:linear-gradient(135deg,#f0f0f0,#d0d0d0);border-color:#aaa;box-shadow:0 4px 0 #aaa;}
+.music-btn.muted{background:linear-gradient(135deg,#1a1a1a,#333);border-color:#555;box-shadow:0 4px 0 #222;animation:none;}
 </style>
 
-<button class="music-btn" id="musicBtn" onclick="toggleMusic()" title="Musique">🎵</button>
+<button class="music-btn" id="musicBtn" onclick="toggleMusic()" title="Musique">🎃</button>
 
 <script>
-// ── Musique de fond fun générée par Web Audio API ──
-var audioCtx = null;
-var musicNodes = [];
-var musicPlaying = false;
-var musicScheduled = false;
+var audioCtx=null;
+var musicPlaying=false;
+var musicNodes=[];
+var loopTimeout=null;
 
-// Mélodie joyeuse inspirée d'un thème d'aventure (notes en Hz)
-var MELODY = [
-  // Thème principal — do majeur
-  [523.25, 0.3],  // do5
-  [587.33, 0.15], // re5
-  [659.25, 0.15], // mi5
-  [783.99, 0.3],  // sol5
-  [659.25, 0.15], // mi5
-  [587.33, 0.15], // re5
-  [523.25, 0.6],  // do5
-  [0,      0.15], // silence
-  [392.00, 0.3],  // sol4
-  [440.00, 0.15], // la4
-  [493.88, 0.15], // si4
-  [523.25, 0.3],  // do5
-  [493.88, 0.15], // si4
-  [440.00, 0.15], // la4
-  [392.00, 0.6],  // sol4
-  [0,      0.15], // silence
-  [659.25, 0.3],  // mi5
-  [698.46, 0.15], // fa5
-  [783.99, 0.15], // sol5
-  [880.00, 0.3],  // la5
-  [783.99, 0.15], // sol5
-  [698.46, 0.15], // fa5
-  [659.25, 0.45], // mi5
-  [0,      0.15], // silence
-  [523.25, 0.15], // do5
-  [587.33, 0.15], // re5
-  [659.25, 0.15], // mi5
-  [783.99, 0.6],  // sol5
-  [659.25, 0.15], // mi5
-  [523.25, 0.75], // do5
-  [0,      0.3],  // silence
+// ── Mélodie originale inspirée de l'esprit de Thriller ──
+// Riff de basse syncopé en mi mineur, ambiance funky-horror
+// Composition originale — pas une reproduction de l'oeuvre
+
+var BPM=100;
+var BEAT=60/BPM;
+var S=BEAT/2;   // croche
+var Q=BEAT;     // noire
+var H=BEAT*2;   // blanche
+
+// Riff de basse principal (E mineur pentatonique, syncopé)
+var BASS_RIFF=[
+  [82.41,S*0.9],[0,S*0.1],   // mi2 court
+  [82.41,S*0.9],[0,S*0.1],   // mi2
+  [0,    S],                  // silence
+  [110.0,S*0.9],[0,S*0.1],   // la2
+  [98.00,Q*0.9],[0,Q*0.1],   // sol2
+  [82.41,S*0.9],[0,S*0.1],   // mi2
+  [0,    S],                  // silence
+  [73.42,S*0.9],[0,S*0.1],   // re2
+  [82.41,H*0.9],[0,H*0.1],   // mi2 long
+  [0,    Q],                  // silence
 ];
 
-// Basse d'accompagnement (pattern répété)
-var BASS = [
-  [130.81, 0.6], // do2
-  [0,      0.6],
-  [196.00, 0.6], // sol2
-  [0,      0.6],
-  [174.61, 0.6], // fa2
-  [0,      0.6],
-  [196.00, 0.6], // sol2
-  [0,      0.6],
+// Mélodie principale (ambiance mystérieuse, esprit Thriller)
+var MELODY_RIFF=[
+  [0,    Q],                  // silence intro
+  [329.63,S*0.85],[0,S*0.15], // mi4
+  [329.63,S*0.85],[0,S*0.15], // mi4
+  [392.00,S*0.85],[0,S*0.15], // sol4
+  [329.63,Q*0.85],[0,Q*0.15], // mi4
+  [0,    S],
+  [293.66,S*0.85],[0,S*0.15], // re4
+  [329.63,H*0.85],[0,H*0.15], // mi4 tenu
+  [0,    Q],
+  [349.23,S*0.85],[0,S*0.15], // fa4
+  [329.63,S*0.85],[0,S*0.15], // mi4
+  [293.66,Q*0.85],[0,Q*0.15], // re4
+  [261.63,H*0.85],[0,H*0.15], // do4
+  [0,    Q],
+  [329.63,S*0.85],[0,S*0.15], // mi4
+  [392.00,S*0.85],[0,S*0.15], // sol4
+  [440.00,Q*0.85],[0,Q*0.15], // la4
+  [0,    S],
+  [415.30,S*0.85],[0,S*0.15], // sol#4 (note dissonante = frisson)
+  [392.00,H*0.85],[0,H*0.15], // sol4
+  [0,    Q],
 ];
+
+// Contrepoint (voix haute, effet mystérieux)
+var COUNTER=[
+  [0,    H*2],
+  [523.25,S*0.7],[0,S*0.3],   // do5
+  [493.88,S*0.7],[0,S*0.3],   // si4
+  [523.25,Q*0.7],[0,Q*0.3],   // do5
+  [0,    Q],
+  [587.33,S*0.7],[0,S*0.3],   // re5
+  [523.25,H*0.7],[0,H*0.3],   // do5
+  [0,    H],
+  [493.88,Q*0.7],[0,Q*0.3],   // si4
+  [466.16,Q*0.7],[0,Q*0.3],   // sib4 (blue note)
+  [440.00,H*0.7],[0,H*0.3],   // la4
+  [0,    H*2],
+];
+
+// Percussion synthétique (kick + snare simulés)
+var KICK_PATTERN=[Q,Q,Q,Q,Q,Q,Q,Q]; // kick sur chaque temps
+var SNARE_BEATS=[1,3,5,7];           // snare sur temps 2 et 4
 
 function initAudio(){
   if(audioCtx) return true;
   try{
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    audioCtx=new(window.AudioContext||window.webkitAudioContext)();
     return true;
-  }catch(e){ return false; }
+  }catch(e){return false;}
 }
 
-function playNote(freq, startTime, duration, gainVal, type){
-  if(!audioCtx || freq === 0) return;
-  var osc = audioCtx.createOscillator();
-  var gain = audioCtx.createGain();
-  osc.connect(gain);
+function playTone(freq,start,dur,vol,type,detune){
+  if(!audioCtx||freq===0) return;
+  var osc=audioCtx.createOscillator();
+  var gain=audioCtx.createGain();
+  var filter=audioCtx.createBiquadFilter();
+  filter.type='lowpass';
+  filter.frequency.value=type==='sawtooth'?800:4000;
+  osc.connect(filter);
+  filter.connect(gain);
   gain.connect(audioCtx.destination);
-  osc.type = type || 'sine';
-  osc.frequency.setValueAtTime(freq, startTime);
-  gain.gain.setValueAtTime(0, startTime);
-  gain.gain.linearRampToValueAtTime(gainVal, startTime + 0.02);
-  gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration - 0.02);
-  osc.start(startTime);
-  osc.stop(startTime + duration);
+  osc.type=type||'sine';
+  if(detune) osc.detune.value=detune;
+  osc.frequency.setValueAtTime(freq,start);
+  gain.gain.setValueAtTime(0,start);
+  gain.gain.linearRampToValueAtTime(vol,start+0.015);
+  gain.gain.exponentialRampToValueAtTime(0.001,start+dur*0.92);
+  osc.start(start);
+  osc.stop(start+dur);
   musicNodes.push(osc);
 }
 
-function scheduleMusic(){
-  if(!musicPlaying || !audioCtx) return;
-  var now = audioCtx.currentTime;
-  var t = now + 0.05;
-  // Jouer mélodie
-  for(var i=0;i<MELODY.length;i++){
-    playNote(MELODY[i][0], t, MELODY[i][1] * 0.95, 0.08, 'triangle');
-    t += MELODY[i][1];
-  }
-  // Jouer basse en boucle sous la mélodie
-  var bt = now + 0.05;
-  var totalDur = MELODY.reduce(function(s,n){return s+n[1];},0);
-  while(bt < now + 0.05 + totalDur + 0.5){
-    for(var j=0;j<BASS.length;j++){
-      playNote(BASS[j][0], bt, BASS[j][1] * 0.9, 0.04, 'sine');
-      bt += BASS[j][1];
+function playKick(start){
+  if(!audioCtx) return;
+  var osc=audioCtx.createOscillator();
+  var gain=audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.type='sine';
+  osc.frequency.setValueAtTime(160,start);
+  osc.frequency.exponentialRampToValueAtTime(40,start+0.15);
+  gain.gain.setValueAtTime(0.18,start);
+  gain.gain.exponentialRampToValueAtTime(0.001,start+0.25);
+  osc.start(start);
+  osc.stop(start+0.3);
+  musicNodes.push(osc);
+}
+
+function playSnare(start){
+  if(!audioCtx) return;
+  var buf=audioCtx.createBuffer(1,audioCtx.sampleRate*0.15,audioCtx.sampleRate);
+  var data=buf.getChannelData(0);
+  for(var i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*0.5;
+  var src=audioCtx.createBufferSource();
+  var gain=audioCtx.createGain();
+  var filter=audioCtx.createBiquadFilter();
+  filter.type='highpass';
+  filter.frequency.value=1200;
+  src.buffer=buf;
+  src.connect(filter);
+  filter.connect(gain);
+  gain.connect(audioCtx.destination);
+  gain.gain.setValueAtTime(0.12,start);
+  gain.gain.exponentialRampToValueAtTime(0.001,start+0.12);
+  src.start(start);
+  musicNodes.push(src);
+}
+
+function scheduleLoop(){
+  if(!musicPlaying||!audioCtx) return;
+  var now=audioCtx.currentTime+0.05;
+  var t=now;
+
+  // Calcul durée totale du loop (basé sur le riff le plus long)
+  var bassLen=BASS_RIFF.reduce(function(s,n){return s+n[1];},0);
+  var melLen=MELODY_RIFF.reduce(function(s,n){return s+n[1];},0);
+  var loopLen=Math.max(bassLen,melLen)*2; // 2 répétitions
+
+  // Basse × 2
+  var bt=now;
+  for(var rep=0;rep<2;rep++){
+    for(var i=0;i<BASS_RIFF.length;i++){
+      playTone(BASS_RIFF[i][0],bt,BASS_RIFF[i][1],0.12,'sawtooth');
+      bt+=BASS_RIFF[i][1];
     }
   }
-  // Reprogrammer la prochaine boucle
-  var loopDur = totalDur + 0.3;
-  setTimeout(function(){
-    if(musicPlaying) scheduleMusic();
-  }, (loopDur - 0.5) * 1000);
+
+  // Mélodie × 2 (légèrement décalée pour le groove)
+  var mt=now+S*0.5;
+  for(var rep2=0;rep2<2;rep2++){
+    for(var j=0;j<MELODY_RIFF.length;j++){
+      playTone(MELODY_RIFF[j][0],mt,MELODY_RIFF[j][1],0.07,'triangle');
+      mt+=MELODY_RIFF[j][1];
+    }
+  }
+
+  // Contrepoint (une fois)
+  var ct=now+Q;
+  for(var k=0;k<COUNTER.length;k++){
+    playTone(COUNTER[k][0],ct,COUNTER[k][1],0.04,'sine',-5);
+    ct+=COUNTER[k][1];
+  }
+
+  // Percussion sur la durée du loop
+  var pt=now;
+  var beat=0;
+  while(pt<now+loopLen-Q){
+    playKick(pt);
+    if(beat%2===1) playSnare(pt+S*0.5);
+    pt+=Q;
+    beat++;
+  }
+
+  // Programmer la prochaine boucle
+  loopTimeout=setTimeout(function(){
+    if(musicPlaying) scheduleLoop();
+  },(loopLen-0.4)*1000);
 }
 
 function startMusic(){
   if(!initAudio()) return;
-  if(audioCtx.state === 'suspended') audioCtx.resume();
-  musicPlaying = true;
-  scheduleMusic();
-  document.getElementById('musicBtn').textContent = '🎵';
-  document.getElementById('musicBtn').classList.remove('muted');
+  if(audioCtx.state==='suspended') audioCtx.resume();
+  musicPlaying=true;
+  scheduleLoop();
+  var btn=document.getElementById('musicBtn');
+  btn.textContent='🎃';
+  btn.classList.remove('muted');
 }
 
 function stopMusic(){
-  musicPlaying = false;
-  musicNodes.forEach(function(n){
-    try{ n.stop(); }catch(e){}
-  });
-  musicNodes = [];
-  document.getElementById('musicBtn').textContent = '🔇';
-  document.getElementById('musicBtn').classList.add('muted');
+  musicPlaying=false;
+  if(loopTimeout){clearTimeout(loopTimeout);loopTimeout=null;}
+  musicNodes.forEach(function(n){try{n.stop();}catch(e){}});
+  musicNodes=[];
+  var btn=document.getElementById('musicBtn');
+  btn.textContent='🔇';
+  btn.classList.add('muted');
 }
 
 function toggleMusic(){
-  if(musicPlaying) stopMusic();
-  else startMusic();
+  if(musicPlaying) stopMusic(); else startMusic();
 }
 
-// Démarrer automatiquement au premier clic sur la page
-document.addEventListener('click', function startOnce(){
-  if(!musicPlaying && !document.getElementById('musicBtn').classList.contains('muted')){
+// Démarrer au premier clic
+document.addEventListener('click',function startOnce(){
+  if(!musicPlaying&&!document.getElementById('musicBtn').classList.contains('muted')){
     startMusic();
   }
-  document.removeEventListener('click', startOnce);
-}, {once: true});
+},{once:true});
 </script>
-
 </body>
-</html>
