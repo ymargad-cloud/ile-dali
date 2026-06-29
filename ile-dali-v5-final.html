@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>L'Île d'Ali</title>
+<link href="https://fonts.googleapis.com/css2?family=Boogaloo&family=Nunito:wght@600;700;800&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --teal:#00b8a9;--teal-d:#008f84;--teal-l:#7eeee8;
+  --purple:#9b59f5;--purple-d:#7635d8;--purple-l:#c9a8ff;
+  --gold:#f9c621;--gold-d:#d9a000;--gold-l:#ffe984;
+  --coral:#ff6b6b;--coral-d:#e84040;--coral-l:#ffb3b3;
+  --sky:#4fc3f7;--sky-d:#0288d1;--sky-l:#b3e5fc;
+  --green:#4caf50;--green-d:#2e7d32;--green-l:#a5d6a7;
+  --ink:#2d2d2d;--ink-soft:#555;
+  --card:#fff;--cream:#fffde7;
+  --fd:'Boogaloo',cursive;--fb:'Nunito',sans-serif;--fa:'Fredoka',sans-serif;
+  --sh:0 8px 0 rgba(0,0,0,.15),0 12px 24px rgba(0,0,0,.12);
+  --shs:0 4px 0 rgba(0,0,0,.12),0 6px 14px rgba(0,0,0,.10);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--fb);background:#e8f5e9;min-height:100vh;overflow-x:hidden;}
+.scene{position:fixed;inset:0;z-index:0;background:repeating-linear-gradient(90deg,rgba(0,184,169,.07) 0,rgba(0,184,169,.07) 40px,transparent 40px,transparent 80px),linear-gradient(180deg,#c8f7f4,#e8fff8 40%,#fff9e8);}
+.app{position:relative;z-index:1;max-width:540px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;}
+.view{display:none;flex:1;flex-direction:column;padding:0 16px 110px;animation:pop .35s cubic-bezier(.175,.885,.32,1.275);}
+.view.active{display:flex;}
+@keyframes pop{from{opacity:0;transform:scale(.96) translateY(10px);}to{opacity:1;transform:scale(1) translateY(0);}}
+/* STATUS */
+.sb{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 8px;position:sticky;top:0;z-index:50;background:linear-gradient(180deg,rgba(200,247,244,.95) 80%,transparent);}
+.pts{display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,#fff8cc,#fff3a0);border:3px solid var(--gold-d);border-radius:999px;padding:6px 14px 6px 8px;box-shadow:0 4px 0 var(--gold-d),0 6px 12px rgba(0,0,0,.12);font-family:var(--fd);font-size:17px;color:#7a5000;}
+.pts-c{width:28px;height:28px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fffbe0,var(--gold) 55%,var(--gold-d));border:2px solid var(--gold-d);display:flex;align-items:center;justify-content:center;font-size:14px;}
+.stk{display:flex;align-items:center;gap:5px;background:linear-gradient(135deg,#ffe0e0,#ffc8c8);border:3px solid var(--coral-d);border-radius:999px;padding:6px 14px;font-family:var(--fd);font-size:16px;color:#8b0000;box-shadow:0 4px 0 var(--coral-d);}
+.av{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--sky-l),var(--sky));border:3px solid var(--sky-d);box-shadow:0 4px 0 var(--sky-d);overflow:hidden;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.av svg{width:90%;height:90%;}
+/* CARDS & BTNS */
+.card{background:var(--card);border-radius:20px;box-shadow:var(--sh);padding:20px;border:3px solid rgba(0,0,0,.06);}
+.card-gold{background:linear-gradient(135deg,#fff8cc,#ffeea0);border-color:var(--gold-d);}
+.btn{font-family:var(--fd);font-size:18px;border:none;cursor:pointer;border-radius:999px;padding:14px 28px;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:transform .1s,box-shadow .1s;}
+.btn:active{transform:translateY(4px);}
+.btn-green{background:linear-gradient(180deg,var(--green-l),var(--green));color:#fff;box-shadow:0 6px 0 var(--green-d),0 8px 16px rgba(0,0,0,.2);text-shadow:0 2px 0 rgba(0,0,0,.2);}
+.btn-green:active{box-shadow:0 2px 0 var(--green-d);}
+.btn-gold{background:linear-gradient(180deg,var(--gold-l),var(--gold));color:#7a5000;box-shadow:0 6px 0 var(--gold-d);}
+.btn-gold:active{box-shadow:0 2px 0 var(--gold-d);}
+.btn-purple{background:linear-gradient(180deg,var(--purple-l),var(--purple));color:#fff;box-shadow:0 6px 0 var(--purple-d);text-shadow:0 2px 0 rgba(0,0,0,.2);}
+.btn-purple:active{box-shadow:0 2px 0 var(--purple-d);}
+.btn-outline{background:#fff;border:3px solid currentColor;box-shadow:var(--shs);}
+.btn-block{width:100%;}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+/* BUBBLES */
+.brow{display:flex;align-items:flex-end;gap:10px;margin-bottom:14px;}
+.zwrap{width:72px;height:72px;flex:0 0 auto;filter:drop-shadow(0 6px 8px rgba(0,0,0,.2));animation:wb 3s ease-in-out infinite;}
+@keyframes wb{0%,100%{transform:rotate(-4deg);}50%{transform:rotate(4deg) translateY(-4px);}}
+.zwrap svg{width:100%;height:100%;}
+.bub{background:#fff;border:3px solid #e0d0ff;border-radius:20px 20px 20px 4px;padding:12px 16px;flex:1;font-family:var(--fa);font-weight:700;font-size:15px;color:var(--ink);box-shadow:0 4px 0 #c9a8ff,0 6px 14px rgba(155,89,245,.15);position:relative;}
+.bub::before{content:"";position:absolute;left:-13px;bottom:6px;width:0;height:0;border:10px solid transparent;border-right-color:#e0d0ff;border-left:0;}
+.bub::after{content:"";position:absolute;left:-8px;bottom:9px;width:0;height:0;border:7px solid transparent;border-right-color:#fff;border-left:0;}
+.bub b{color:var(--purple-d);}
+.bub .tip{display:block;font-size:13px;color:var(--ink-soft);margin-top:4px;font-weight:600;}
+/* NAV */
+.dnav{position:fixed;bottom:0;left:0;right:0;z-index:100;background:linear-gradient(180deg,var(--purple-d),#4a1a9e);padding:10px 8px 12px;}
+.dnav-i{max-width:540px;margin:0 auto;display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;}
+.dnav-i::-webkit-scrollbar{display:none;}
+.dnav button{flex:0 0 auto;font-family:var(--fb);font-weight:700;font-size:11px;background:rgba(255,255,255,.12);color:#e8d8ff;border:2px solid rgba(255,255,255,.2);border-radius:999px;padding:7px 12px;cursor:pointer;white-space:nowrap;}
+.dnav button.active{background:var(--gold);color:#7a5000;border-color:var(--gold-d);}
+/* LOGIN */
+#vl{align-items:center;justify-content:center;text-align:center;padding-top:20px;min-height:100vh;}
+.hz{width:160px;height:160px;margin:0 auto 10px;animation:hf 3s ease-in-out infinite;filter:drop-shadow(0 14px 16px rgba(0,0,0,.25));}
+@keyframes hf{0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-14px) scale(1.03);}}
+.ltitle{font-family:var(--fd);font-size:36px;color:#fff;text-shadow:0 4px 0 var(--teal-d),0 8px 20px rgba(0,184,169,.4);margin-bottom:4px;}
+.lsub{font-family:var(--fa);font-weight:600;font-size:15px;color:var(--teal-d);margin-bottom:20px;}
+.pcard{background:#fff;border-radius:24px;padding:24px 22px 28px;box-shadow:0 10px 0 var(--teal-d),0 14px 30px rgba(0,0,0,.2);width:100%;max-width:320px;border:4px solid var(--teal);position:relative;overflow:hidden;}
+.pcard::before{content:"";position:absolute;top:0;left:0;right:0;height:6px;background:repeating-linear-gradient(90deg,var(--teal) 0,var(--teal) 12px,var(--gold) 12px,var(--gold) 24px,var(--coral) 24px,var(--coral) 36px,var(--purple) 36px,var(--purple) 48px);}
+.pav{width:90px;height:90px;border-radius:50%;border:4px solid var(--sky-d);box-shadow:0 4px 0 var(--sky-d);margin:6px auto 12px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--sky-l),var(--sky));}
+.pav svg{width:86%;height:86%;}
+.pname{font-family:var(--fd);font-size:24px;color:var(--ink);}
+.pmeta{font-family:var(--fa);font-weight:600;font-size:13px;color:var(--ink-soft);margin-bottom:18px;}
+/* PROGRESS */
+.pw{display:flex;align-items:center;gap:10px;margin:12px 0 18px;}
+.pt{flex:1;height:18px;background:#e0e0e0;border-radius:999px;overflow:hidden;border:3px solid rgba(0,0,0,.08);box-shadow:inset 0 2px 4px rgba(0,0,0,.12);}
+.pf{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--teal-l),var(--teal));transition:width .5s cubic-bezier(.2,.8,.2,1);}
+.pl{font-family:var(--fd);font-size:15px;color:var(--ink);white-space:nowrap;}
+/* QUESTION */
+.qcard{background:#fff;border-radius:20px;box-shadow:0 6px 0 rgba(0,0,0,.1),0 10px 20px rgba(0,0,0,.1);border:3px solid rgba(0,0,0,.06);padding:22px;text-align:center;margin-bottom:16px;}
+.qsubj{display:inline-block;font-family:var(--fd);font-size:13px;background:linear-gradient(135deg,var(--purple-l),var(--purple));color:#fff;padding:5px 14px;border-radius:999px;margin-bottom:10px;box-shadow:0 3px 0 var(--purple-d);}
+.qtext{font-family:var(--fd);font-size:24px;color:var(--ink);line-height:1.3;}
+.qcons{font-family:var(--fa);font-weight:700;font-size:13px;background:linear-gradient(135deg,#fff8cc,#ffeea0);border:2px solid var(--gold-d);border-radius:12px;padding:8px 12px;margin-bottom:12px;color:#7a5000;text-align:left;}
+/* OPTIONS */
+.opts{display:flex;flex-direction:column;gap:10px;}
+.opt{background:#fff;border:3px solid #e0e0e0;border-radius:14px;padding:14px 16px;font-family:var(--fb);font-weight:700;font-size:16px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:12px;transition:.12s;box-shadow:0 4px 0 #c0c0c0;}
+.opt:hover{transform:translateY(-2px);box-shadow:0 6px 0 #b0b0b0;border-color:var(--teal);}
+.opt:active{transform:translateY(2px);box-shadow:0 2px 0 #c0c0c0;}
+.opt.correct{background:linear-gradient(135deg,#e8fff0,#c8f7d8);border-color:var(--green);box-shadow:0 4px 0 var(--green-d);}
+.opt.wrong{background:linear-gradient(135deg,#fff0f0,#ffd8d8);border-color:var(--coral);box-shadow:0 4px 0 var(--coral-d);}
+.olet{width:30px;height:30px;border-radius:50%;flex:0 0 auto;background:linear-gradient(135deg,var(--purple-l),var(--purple));color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:15px;box-shadow:0 3px 0 var(--purple-d);}
+.opt.correct .olet{background:linear-gradient(135deg,var(--green-l),var(--green));box-shadow:0 3px 0 var(--green-d);}
+.opt.wrong .olet{background:linear-gradient(135deg,var(--coral-l),var(--coral));box-shadow:0 3px 0 var(--coral-d);}
+/* FEEDBACK */
+.fb{display:none;border-radius:16px;padding:14px;text-align:center;font-family:var(--fd);font-size:17px;margin-top:12px;}
+.fb.show{display:block;}
+.fb.good{background:linear-gradient(135deg,#e8fff0,#c8f7d8);border:3px solid var(--green);color:var(--green-d);box-shadow:0 4px 0 var(--green-d);}
+.fb.bad{background:linear-gradient(135deg,#fff0f0,#ffd8d8);border:3px solid var(--coral);color:var(--coral-d);box-shadow:0 4px 0 var(--coral-d);}
+/* SKILLS */
+.skl{display:flex;flex-direction:column;gap:14px;margin:14px 0;}
+.ski .skh{display:flex;justify-content:space-between;font-family:var(--fd);font-size:16px;color:var(--ink);margin-bottom:6px;}
+.skt{height:18px;background:#e0e0e0;border-radius:999px;overflow:hidden;border:3px solid rgba(0,0,0,.07);box-shadow:inset 0 2px 4px rgba(0,0,0,.1);}
+.skf{height:100%;border-radius:999px;transition:width 1.2s cubic-bezier(.2,.8,.2,1);}
+/* PRIO */
+.plist{display:flex;flex-direction:column;gap:10px;margin-top:10px;}
+.pitem{display:flex;align-items:flex-start;gap:12px;background:#fff;border-radius:16px;padding:14px;box-shadow:var(--shs);border-left:8px solid var(--coral);}
+.pitem.p2{border-left-color:var(--gold-d);}
+.pitem.p3{border-left-color:var(--teal);}
+.pitem.p4{border-left-color:var(--purple);}
+.pbadge{font-family:var(--fd);font-size:13px;color:#fff;background:var(--coral);border-radius:8px;padding:4px 9px;flex:0 0 auto;box-shadow:0 3px 0 var(--coral-d);}
+.pitem.p2 .pbadge{background:var(--gold-d);box-shadow:0 3px 0 #a07000;}
+.pitem.p3 .pbadge{background:var(--teal);box-shadow:0 3px 0 var(--teal-d);}
+.pitem.p4 .pbadge{background:var(--purple);box-shadow:0 3px 0 var(--purple-d);}
+.ptitle2{font-family:var(--fd);font-size:16px;color:var(--ink);}
+.pdesc{font-size:12.5px;color:var(--ink-soft);margin-top:3px;font-family:var(--fa);font-weight:600;}
+/* DASH */
+.dh{font-family:var(--fd);font-size:28px;color:var(--ink);padding:14px 0 2px;}
+.icard{position:relative;border-radius:24px;overflow:hidden;margin:12px 0 18px;cursor:pointer;box-shadow:0 8px 0 var(--teal-d),0 12px 24px rgba(0,0,0,.18);min-height:180px;background:linear-gradient(160deg,#4fc3f7,#00b8a9 50%,#4caf50);border:4px solid #fff;display:flex;flex-direction:column;justify-content:flex-end;padding:16px;transition:.2s;}
+.icard:hover{transform:translateY(-3px);}
+.ilbl{align-self:flex-start;background:rgba(255,255,255,.95);font-family:var(--fd);font-size:13px;color:var(--teal-d);padding:6px 14px;border-radius:999px;margin-bottom:auto;border:2px solid var(--teal);box-shadow:0 3px 0 var(--teal-d);}
+.ideco{position:absolute;filter:drop-shadow(0 4px 8px rgba(0,0,0,.25));}
+.istats{display:flex;gap:8px;margin-top:10px;}
+.istat{background:rgba(255,255,255,.95);border-radius:12px;padding:7px 12px;font-family:var(--fd);font-size:13px;color:var(--teal-d);border:2px solid var(--teal);box-shadow:0 3px 0 var(--teal-d);}
+.mt{font-family:var(--fd);font-size:20px;color:var(--ink);margin:4px 0 12px;}
+.mc{display:flex;align-items:center;gap:14px;background:#fff;border-radius:18px;padding:14px 16px;box-shadow:var(--shs);margin-bottom:12px;border:3px solid #e8e0ff;cursor:pointer;transition:.15s;}
+.mc:hover{transform:translateY(-2px);box-shadow:var(--sh);}
+.mc.done{background:linear-gradient(135deg,#f0fff4,#dff5e4);border-color:var(--green);}
+.mc.locked{opacity:.5;cursor:not-allowed;}
+.mi{width:54px;height:54px;border-radius:16px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:26px;background:linear-gradient(135deg,var(--gold-l),var(--gold));border:3px solid var(--gold-d);box-shadow:0 4px 0 var(--gold-d);}
+.mi.m2{background:linear-gradient(135deg,var(--teal-l),var(--teal));border-color:var(--teal-d);box-shadow:0 4px 0 var(--teal-d);}
+.mi.m3{background:linear-gradient(135deg,var(--coral-l),var(--coral));border-color:var(--coral-d);box-shadow:0 4px 0 var(--coral-d);}
+.mb{flex:1;}
+.mn{font-family:var(--fd);font-size:16.5px;color:var(--ink);}
+.md{font-size:12.5px;color:var(--ink-soft);margin-top:2px;font-family:var(--fa);font-weight:600;}
+.mpts{font-family:var(--fd);font-size:14px;color:var(--gold-d);flex:0 0 auto;}
+.mchk{width:30px;height:30px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 3px 0 var(--green-d);}
+/* SHOP */
+.ptsbanner{background:linear-gradient(135deg,var(--gold-l),var(--gold));border-radius:20px;padding:20px;text-align:center;margin:14px 0 18px;box-shadow:0 6px 0 var(--gold-d),0 10px 20px rgba(0,0,0,.15);border:4px solid var(--gold-d);}
+.ptsbig{font-family:var(--fd);font-size:38px;color:#7a5000;}
+.ptslbl{font-family:var(--fa);font-weight:700;font-size:13px;color:#9a6a00;}
+.shoplist{display:flex;flex-direction:column;gap:10px;}
+.shopitem{display:flex;align-items:center;gap:14px;background:#fff;border-radius:16px;padding:14px;box-shadow:var(--shs);border:3px solid #e8e0ff;}
+.shopitem.afford{border-color:var(--green);}
+.shopic{width:52px;height:52px;border-radius:14px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:26px;background:linear-gradient(135deg,#f0f0f0,#e0e0e0);border:2px solid #ccc;}
+.shopnm{font-family:var(--fd);font-size:16px;color:var(--ink);}
+.shopcost{font-family:var(--fa);font-weight:600;font-size:13px;color:var(--ink-soft);}
+.shopbtn{font-family:var(--fd);font-size:13px;padding:9px 14px;border-radius:999px;border:none;cursor:pointer;background:linear-gradient(135deg,var(--green-l),var(--green));color:#fff;box-shadow:0 3px 0 var(--green-d);}
+.shopbtn:disabled{background:#ccc;box-shadow:0 3px 0 #aaa;cursor:not-allowed;}
+/* BADGES */
+.bgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px;}
+.btile{background:#fff;border-radius:18px;padding:14px 8px;text-align:center;box-shadow:var(--shs);border:3px solid #e8e0ff;}
+.btile.locked{opacity:.4;filter:grayscale(1);}
+.btile.unlocked{border-color:var(--gold-d);background:linear-gradient(135deg,#fffbe0,#fff3a0);}
+.bem{font-size:36px;margin-bottom:5px;}
+.bnm{font-family:var(--fd);font-size:12px;color:var(--ink);}
+/* PARENT */
+.pw2{background:linear-gradient(180deg,var(--purple-d),#3a0d8e);min-height:100vh;}
+.pt2{display:flex;align-items:center;justify-content:space-between;padding:18px;max-width:540px;margin:0 auto;}
+.pt2 h2{font-family:var(--fd);font-size:22px;color:#fff;}
+.pt2 .bk{font-family:var(--fb);font-weight:700;font-size:13px;color:#c9a8ff;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.2);padding:8px 14px;border-radius:999px;cursor:pointer;}
+.psr{display:flex;gap:10px;padding:0 18px;max-width:540px;margin:0 auto;}
+.pst{flex:1;background:rgba(255,255,255,.1);border-radius:16px;padding:14px;border:1px solid rgba(255,255,255,.1);}
+.pstn{font-family:var(--fd);font-size:24px;color:#fff;}
+.pstl{font-size:11px;color:#c9a8ff;margin-top:2px;font-family:var(--fa);font-weight:600;}
+.ptabs{display:flex;gap:6px;max-width:540px;margin:16px auto 0;padding:0 18px;overflow-x:auto;scrollbar-width:none;}
+.ptabs::-webkit-scrollbar{display:none;}
+.ptab{flex:0 0 auto;font-family:var(--fd);font-size:13px;color:#c9a8ff;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.12);padding:9px 14px;border-radius:999px;cursor:pointer;white-space:nowrap;}
+.ptab.active{background:var(--gold);color:#7a5000;border-color:var(--gold-d);}
+.pbody{max-width:540px;margin:0 auto;padding:16px;}
+.pc2{background:rgba(255,255,255,.08);border-radius:18px;padding:16px;margin-bottom:14px;border:1px solid rgba(255,255,255,.07);}
+.pc2 h3{color:#fff;font-family:var(--fd);font-size:17px;margin-bottom:12px;}
+.spr2{margin-bottom:12px;}
+.spr2-t{display:flex;justify-content:space-between;font-family:var(--fd);font-size:14px;color:#d8c8ff;margin-bottom:5px;}
+.spr2-tr{height:12px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden;}
+.spr2-f{height:100%;border-radius:999px;}
+.alt{display:flex;gap:10px;background:rgba(255,107,107,.12);border:1px solid rgba(255,107,107,.3);border-radius:12px;padding:12px;margin-bottom:10px;}
+.alt-t{font-size:13px;color:#ffd8d8;font-family:var(--fa);font-weight:600;line-height:1.4;}
+.rco{display:flex;gap:10px;background:rgba(76,175,80,.1);border:1px solid rgba(76,175,80,.25);border-radius:12px;padding:12px;margin-bottom:8px;}
+.rco-t{font-size:13px;color:#c8f7d8;font-family:var(--fa);font-weight:600;line-height:1.4;}
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.pbtn2{font-family:var(--fd);font-size:14px;padding:10px;border-radius:12px;border:2px solid rgba(255,255,255,.15);background:rgba(255,255,255,.08);color:#c9a8ff;cursor:pointer;text-align:center;}
+.pbtn2.active{background:var(--gold);color:#7a5000;border-color:var(--gold-d);}
+.ptri{font-family:var(--fd);font-size:14px;color:var(--gold-l);margin-bottom:8px;margin-top:14px;}
+.psubj{background:rgba(255,255,255,.06);border-radius:10px;padding:10px;margin-bottom:8px;}
+.psubjn{font-family:var(--fd);font-size:13px;color:#fff;margin-bottom:5px;}
+.ptags{display:flex;flex-wrap:wrap;gap:5px;}
+.ptag{font-size:11px;font-family:var(--fa);font-weight:700;color:#d8c8ff;background:rgba(255,255,255,.08);border-radius:6px;padding:3px 8px;}
+.tgl{width:40px;height:24px;border-radius:999px;background:rgba(255,255,255,.15);position:relative;cursor:pointer;flex:0 0 auto;}
+.tgl.on{background:var(--green);}
+.tgl::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s;}
+.tgl.on::after{left:19px;}
+.rrow{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06);font-family:var(--fa);font-weight:700;font-size:13px;color:#d8c8ff;}
+/* SECTION */
+.st{font-family:var(--fd);font-size:22px;color:var(--ink);margin:16px 0 4px;}
+.ss{font-family:var(--fa);font-weight:600;font-size:13.5px;color:var(--ink-soft);margin-bottom:14px;}
+/* CONFETTI */
+.cfp{position:fixed;top:-24px;z-index:300;border-radius:3px;pointer-events:none;animation:cfa linear forwards;}
+@keyframes cfa{to{transform:translateY(110vh) rotate(720deg);opacity:.2;}}
+/* COMPLETE */
+.cwrap{text-align:center;padding:24px 0;}
+.czappy{width:120px;height:120px;margin:0 auto 12px;animation:hf 3s ease-in-out infinite;filter:drop-shadow(0 8px 12px rgba(0,0,0,.2));}
+.cpts{display:inline-block;font-family:var(--fd);font-size:22px;color:#7a5000;background:linear-gradient(135deg,var(--gold-l),var(--gold));border:3px solid var(--gold-d);border-radius:16px;padding:12px 24px;box-shadow:0 5px 0 var(--gold-d);margin:14px 0;}
+/* LOADING */
+.loading{text-align:center;padding:60px 20px;}
+.loading .lico{font-size:60px;animation:wb 1s infinite;}
+.loading .ltxt{font-family:var(--fd);font-size:20px;margin-top:16px;color:var(--purple-d);}
+.loading .lsub{font-size:14px;color:var(--ink-soft);margin-top:8px;}
+/* EXERCISE MENU */
+.emenu-card{display:flex;align-items:center;gap:14px;background:#fff;border-radius:18px;padding:14px 16px;box-shadow:var(--shs);margin-bottom:12px;cursor:pointer;transition:.15s;}
+.emenu-card:hover{transform:translateY(-2px);box-shadow:var(--sh);}
+::-webkit-scrollbar{width:0;height:0;}
+</style>
+</head>
+<body>
+<div class="scene"></div>
+<div class="app" id="app"></div>
+<div class="dnav"><div class="dnav-i" id="dn"></div></div>
+<script>
+var ST={pts:0,streak:0,quizIdx:0,quizScore:0,exStep:0,exCorrect:0,exQs:[],exSet:'',ptab:'sessions',plvl:'CE2',sName:'',sResults:[]};
+var SCREENS=["login","diag","quiz","results","dash","exercise","rewards","island","badges","parent"];
+var NLABELS={"login":"1.Connexion","diag":"2.Diagnostic","quiz":"3.Quiz","results":"4.Résultats","dash":"5.Île d'Ali","exercise":"6.Exercice","rewards":"7.Boutique","island":"8.Carte","badges":"9.Badges","parent":"10.Parents"};
+
+function zappySVG(mood){
+  mood=mood||'happy';
+  var eyes={
+    happy:'<circle cx="38" cy="46" r="6" fill="#fff" stroke="#8a7fc4" stroke-width="1.5"/><circle cx="62" cy="46" r="6" fill="#fff" stroke="#8a7fc4" stroke-width="1.5"/><circle cx="40" cy="46" r="3.5" fill="#3d2b6e"/><circle cx="64" cy="46" r="3.5" fill="#3d2b6e"/><circle cx="41.5" cy="44.5" r="1.2" fill="#fff"/><circle cx="65.5" cy="44.5" r="1.2" fill="#fff"/><path d="M38 60 Q50 70 62 60" stroke="#e0607a" stroke-width="3.5" stroke-linecap="round" fill="none"/>',
+    excited:'<circle cx="38" cy="44" r="7.5" fill="#fff" stroke="#8a7fc4" stroke-width="1.5"/><circle cx="62" cy="44" r="7.5" fill="#fff" stroke="#8a7fc4" stroke-width="1.5"/><circle cx="40" cy="45" r="4.5" fill="#3d2b6e"/><circle cx="64" cy="45" r="4.5" fill="#3d2b6e"/><circle cx="41.5" cy="43" r="1.6" fill="#fff"/><circle cx="65.5" cy="43" r="1.6" fill="#fff"/><path d="M36 59 Q50 72 64 59 L60 64 Q50 74 40 64 Z" fill="#e0607a" opacity=".9"/>',
+    oops:'<circle cx="38" cy="46" r="6" fill="#fff" stroke="#8a7fc4" stroke-width="1.5"/><circle cx="62" cy="46" r="6" fill="#fff" stroke="#8a7fc4" stroke-width="1.5"/><circle cx="38" cy="47" r="3.5" fill="#3d2b6e"/><circle cx="62" cy="47" r="3.5" fill="#3d2b6e"/><path d="M35 36 Q38 33 42 36" stroke="#3d2b6e" stroke-width="2.5" stroke-linecap="round" fill="none"/><path d="M58 36 Q62 33 66 36" stroke="#3d2b6e" stroke-width="2.5" stroke-linecap="round" fill="none"/><path d="M38 62 Q50 56 62 62" stroke="#e0607a" stroke-width="3" stroke-linecap="round" fill="none"/>',
+    thinking:'<circle cx="38" cy="46" r="6" fill="#fff" stroke="#8a7fc4" stroke-width="1.5"/><circle cx="62" cy="46" r="6" fill="#fff" stroke="#8a7fc4" stroke-width="1.5"/><circle cx="40" cy="46" r="3.5" fill="#3d2b6e"/><circle cx="64" cy="46" r="3.5" fill="#3d2b6e"/><path d="M40 60 Q50 64 60 60" stroke="#e0607a" stroke-width="3" stroke-linecap="round" fill="none"/><text x="68" y="32" font-size="14" fill="#9b59f5">?</text>'
+  };
+  return '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><ellipse cx="50" cy="95" rx="28" ry="5" fill="rgba(0,0,0,.12)"/><path d="M70 58 L86 40 L77 42 L90 22 L73 46 L82 43 Z" fill="#ffd166" stroke="#f0b84d" stroke-width="2" stroke-linejoin="round"/><defs><radialGradient id="bg0" cx="40%" cy="35%" r="65%"><stop offset="0%" stop-color="#fffbe0"/><stop offset="50%" stop-color="#ffe9a8"/><stop offset="100%" stop-color="#f0c850"/></radialGradient></defs><circle cx="50" cy="55" r="36" fill="url(#bg0)"/><path d="M22 34 L10 8 L30 26 Z" fill="#ffe9a8" stroke="#f0b84d" stroke-width="2" stroke-linejoin="round"/><path d="M78 34 L90 8 L70 26 Z" fill="#ffe9a8" stroke="#f0b84d" stroke-width="2" stroke-linejoin="round"/><path d="M20 28 L14 14 L26 24 Z" fill="#f0b84d"/><path d="M80 28 L86 14 L74 24 Z" fill="#f0b84d"/><circle cx="24" cy="60" r="9" fill="#ffaab0" opacity=".7"/><circle cx="76" cy="60" r="9" fill="#ffaab0" opacity=".7"/>'+(eyes[mood]||eyes.happy)+'</svg>';
+}
+
+function aliSVG(){
+  return '<svg viewBox="0 0 160 180" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="sk0" cx="40%" cy="35%" r="65%"><stop offset="0%" stop-color="#f5c880"/><stop offset="100%" stop-color="#e0a050"/></radialGradient></defs>'
+    +'<circle cx="80" cy="90" r="78" fill="#fff3e8" opacity=".5"/>'
+    +'<path d="M20 180 Q18 148 42 138 L62 150 Q80 157 98 150 L118 138 Q142 148 140 180Z" fill="#1a2e5a"/>'
+    +'<path d="M26 150 Q34 140 46 138 L48 146 Q38 152 30 156Z" fill="#cc2020"/>'
+    +'<path d="M29 157 Q38 148 50 146 L51 153 Q42 158 34 162Z" fill="#cc2020" opacity=".7"/>'
+    +'<path d="M62 138 Q80 145 98 138 Q94 143 80 145 Q66 143 62 138Z" fill="#0e1e3a"/>'
+    +'<rect x="68" y="122" width="24" height="20" rx="9" fill="#f0c078"/>'
+    +'<ellipse cx="80" cy="82" rx="52" ry="56" fill="url(#sk0)"/>'
+    +'<ellipse cx="30" cy="86" rx="9" ry="13" fill="#e8a850"/>'
+    +'<ellipse cx="130" cy="86" rx="9" ry="13" fill="#e8a850"/>'
+    +'<ellipse cx="30" cy="88" rx="4" ry="7" fill="rgba(180,90,20,.22)"/>'
+    +'<ellipse cx="130" cy="88" rx="4" ry="7" fill="rgba(180,90,20,.22)"/>'
+    +'<path d="M30 78 Q28 34 80 22 Q132 34 130 78 Q122 48 108 42 Q96 58 80 50 Q64 58 52 42 Q38 48 30 78Z" fill="#2a1408"/>'
+    +'<path d="M28 78 Q28 50 40 32 Q46 54 42 66Z" fill="#1e0e06"/>'
+    +'<path d="M132 78 Q132 50 120 32 Q114 54 118 66Z" fill="#1e0e06"/>'
+    +'<path d="M68 26 Q78 14 92 22 Q86 36 80 30 Q74 36 68 26Z" fill="#1a0c04"/>'
+    +'<path d="M76 22 Q80 12 86 18 L84 28 Q80 22 76 22Z" fill="#1a0c04"/>'
+    +'<path d="M84 20 Q90 12 96 18 L93 28 Q88 22 84 20Z" fill="#1e0e06"/>'
+    +'<path d="M52 60 Q80 50 108 60 Q88 54 80 53 Q72 54 52 60Z" fill="#2a1408" opacity=".8"/>'
+    +'<ellipse cx="62" cy="82" rx="16" ry="15" fill="#fffef8"/>'
+    +'<ellipse cx="98" cy="82" rx="16" ry="15" fill="#fffef8"/>'
+    +'<ellipse cx="62" cy="84" rx="11" ry="11.5" fill="#7a4010"/>'
+    +'<ellipse cx="98" cy="84" rx="11" ry="11.5" fill="#7a4010"/>'
+    +'<ellipse cx="62" cy="85" rx="6.5" ry="7" fill="#120604"/>'
+    +'<ellipse cx="98" cy="85" rx="6.5" ry="7" fill="#120604"/>'
+    +'<ellipse cx="66" cy="79" rx="4.5" ry="3.8" fill="rgba(255,255,255,.95)"/>'
+    +'<ellipse cx="102" cy="79" rx="4.5" ry="3.8" fill="rgba(255,255,255,.95)"/>'
+    +'<circle cx="58" cy="89" r="2" fill="rgba(255,255,255,.5)"/>'
+    +'<circle cx="94" cy="89" r="2" fill="rgba(255,255,255,.5)"/>'
+    +'<path d="M46 74 Q62 68 78 74" stroke="#180a02" stroke-width="3.5" fill="none" stroke-linecap="round"/>'
+    +'<path d="M82 74 Q98 68 114 74" stroke="#180a02" stroke-width="3.5" fill="none" stroke-linecap="round"/>'
+    +'<path d="M44 66 Q62 60 79 65" stroke="#2a1408" stroke-width="5" fill="none" stroke-linecap="round"/>'
+    +'<path d="M81 65 Q98 60 116 66" stroke="#2a1408" stroke-width="5" fill="none" stroke-linecap="round"/>'
+    +'<path d="M76 98 Q80 104 84 98" stroke="#c07030" stroke-width="2.2" fill="none" stroke-linecap="round"/>'
+    +'<path d="M60 114 Q80 132 100 114" stroke="#b05040" stroke-width="4" fill="none" stroke-linecap="round"/>'
+    +'</svg>';
+}
+
+var QBANK={
+  soustraction:[
+    {q:"352 - 128 = ?",opts:["224","234","214","244"],correct:0},
+    {q:"500 - 263 = ?",opts:["237","247","257","267"],correct:0},
+    {q:"743 - 275 = ?",opts:["468","358","368","478"],correct:2},
+    {q:"801 - 456 = ?",opts:["345","355","445","335"],correct:0},
+    {q:"634 - 298 = ?",opts:["336","346","436","326"],correct:0},
+    {q:"700 - 384 = ?",opts:["326","316","336","346"],correct:1},
+    {q:"521 - 147 = ?",opts:["374","364","384","474"],correct:0},
+    {q:"900 - 537 = ?",opts:["363","373","463","353"],correct:0},
+    {q:"415 - 229 = ?",opts:["186","196","176","286"],correct:0},
+    {q:"832 - 456 = ?",opts:["376","366","386","476"],correct:0}
+  ],
+  multiplication:[
+    {q:"6 x 9 = ?",opts:["54","48","56","63"],correct:0},
+    {q:"8 x 7 = ?",opts:["48","56","63","54"],correct:1},
+    {q:"9 x 9 = ?",opts:["72","81","90","78"],correct:1},
+    {q:"7 x 6 = ?",opts:["36","42","48","40"],correct:1},
+    {q:"8 x 8 = ?",opts:["56","72","64","60"],correct:2},
+    {q:"9 x 7 = ?",opts:["56","72","63","54"],correct:2},
+    {q:"6 x 8 = ?",opts:["42","48","54","46"],correct:1},
+    {q:"7 x 9 = ?",opts:["54","56","63","72"],correct:2},
+    {q:"9 x 6 = ?",opts:["48","54","56","63"],correct:1},
+    {q:"7 x 7 = ?",opts:["42","49","56","48"],correct:1},
+    {q:"6 x 6 = ?",opts:["30","36","42","34"],correct:1},
+    {q:"9 x 8 = ?",opts:["63","72","81","56"],correct:1}
+  ],
+  gn_accord:[
+    {q:"Choisis le GN correct :",opts:["un grand arbre vert","un grande arbre vert","un grand arbre verte","une grand arbre vert"],correct:0},
+    {q:"Choisis le GN correct :",opts:["des petits chats blancs","des petit chats blancs","des petites chats blancs","des petits chat blanc"],correct:0},
+    {q:"Quel groupe nominal est correct ?",opts:["les jolies maisons bleues","les jolis maisons bleues","les jolies maison bleues","les jolie maisons bleues"],correct:0},
+    {q:"Choisis la bonne orthographe :",opts:["une belle robe rouge","une beau robe rouge","un belle robe rouge","une belle robe rouges"],correct:0},
+    {q:"Quel GN est bien accorde ?",opts:["de grands chiens noirs","de grand chiens noirs","des grandes chiens noirs","de grands chien noirs"],correct:0},
+    {q:"Choisis la bonne orthographe :",opts:["mes nouveaux livres preferes","mes nouveau livres preferes","mes nouveaux livre preferes","mes nouvelles livres preferes"],correct:0},
+    {q:"Quel GN est correct ?",opts:["une petite fille sage","un petite fille sage","une petit fille sage","une petite fille sages"],correct:0},
+    {q:"Choisis le bon accord :",opts:["les vieux arbres tordus","les vieux arbre tordu","le vieux arbres tordus","les vieilles arbres tordus"],correct:0}
+  ],
+  sujet_verbe:[
+    {q:"Les enfants ___ au parc.",opts:["joue","jouent","joues","jouer"],correct:1},
+    {q:"Mon chat ___ sur le lit.",opts:["dort","dorment","dors","dormir"],correct:0},
+    {q:"Nous ___ nos devoirs.",opts:["fait","faites","faisons","faisez"],correct:2},
+    {q:"Les fleurs ___ au printemps.",opts:["pousse","poussent","pousses","pousser"],correct:1},
+    {q:"Tu ___ tres vite.",opts:["coure","courres","cours","courir"],correct:2},
+    {q:"Elle ___ une belle chanson.",opts:["chante","chantent","chantes","chanter"],correct:0},
+    {q:"Les oiseaux ___ vers le sud.",opts:["migre","migrent","migres","migrer"],correct:1},
+    {q:"Ils ___ leurs affaires.",opts:["range","rangez","rangent","ranger"],correct:2}
+  ],
+  lecture:[
+    {texte:"Tom se leve tot le matin. Il prend son petit-dejeuner, puis met son manteau. Avant de partir, il embrasse sa maman.",q:"Que fait Tom avant de partir ?",opts:["Il dort","Il embrasse sa maman","Il met ses chaussures","Il lit un livre"],correct:1},
+    {texte:"La sorciere cherche ses lunettes. Elle regarde sur la table, dans sa poche et sous le chapeau. Finalement, elles etaient sur son nez !",q:"Ou etaient les lunettes ?",opts:["Sur la table","Dans sa poche","Sous le chapeau","Sur son nez"],correct:3},
+    {texte:"Jules adore les animaux. Il a un chien qui s'appelle Rex et deux lapins. Tous les jours, il leur donne a manger.",q:"Combien d'animaux a Jules ?",opts:["1","2","3","4"],correct:2},
+    {texte:"Il pleut dehors. Lucie reste a la maison. Elle prend un livre et s'installe dans le canape avec son chat.",q:"Que fait Lucie ?",opts:["Elle sort jouer","Elle regarde la tele","Elle lit un livre","Elle fait ses devoirs"],correct:2},
+    {texte:"Le jardin de grand-mere est magnifique. Il y a des roses, des tulipes et des tournesols. Les abeilles adorent y venir.",q:"Qui vient dans le jardin ?",opts:["Des enfants","Des oiseaux","Des papillons","Des abeilles"],correct:3},
+    {texte:"Maxime a oublie son cartable a l'ecole. Il telephone a sa maitresse qui lui dit de venir le chercher demain matin.",q:"Qu'a oublie Maxime ?",opts:["Ses cles","Son manteau","Son cartable","Son livre"],correct:2}
+  ],
+  calcul_mental:[
+    {q:"58 + 37 = ?",opts:["85","95","94","96"],correct:1},
+    {q:"72 - 29 = ?",opts:["43","53","44","42"],correct:0},
+    {q:"45 x 2 = ?",opts:["80","90","85","95"],correct:1},
+    {q:"84 / 4 = ?",opts:["18","21","23","22"],correct:1},
+    {q:"63 + 28 = ?",opts:["81","91","80","90"],correct:1},
+    {q:"100 - 37 = ?",opts:["63","73","64","53"],correct:0},
+    {q:"15 x 4 = ?",opts:["50","55","60","65"],correct:2},
+    {q:"96 / 8 = ?",opts:["10","11","12","13"],correct:2},
+    {q:"47 + 56 = ?",opts:["93","103","102","93"],correct:1},
+    {q:"200 - 85 = ?",opts:["105","115","125","135"],correct:1}
+  ]
+};
+
+var EXOSETS={
+  soustraction:{title:"Soustraction posee",icon:"minus",label:"Soustraction posee",intro:"Pour soustraire, aligne les chiffres a droite. On commence par les unites !",tip:"Si le chiffre en haut est plus petit, tu empruntes a gauche.",n:4},
+  multiplication:{title:"Tables de multiplication",icon:"times",label:"Tables de multiplication",intro:"Revisons les tables ! Prends le temps de reflechir.",tip:"Tu peux retourner : 6x9 = 9x6 = 54.",n:4},
+  gn_accord:{title:"Accords dans le GN",icon:"pencil",label:"Accords GN",intro:"Dans un groupe nominal, tout s'accorde avec le nom principal.",tip:"Feminin : ajoute un e. Pluriel : ajoute un s.",n:3},
+  sujet_verbe:{title:"Accord sujet-verbe",icon:"pen",label:"Sujet-Verbe",intro:"Le verbe s'accorde toujours avec son sujet. Trouve d'abord le sujet !",tip:"Pose la question : Qui est-ce qui fait l'action ?",n:3},
+  lecture:{title:"Lecture et comprehension",icon:"book",label:"Lecture",intro:"Lis bien le texte avant de repondre. La reponse est toujours dans le texte !",tip:"Relis la question, cherche les mots-cles dans le texte.",n:3},
+  calcul_mental:{title:"Calcul mental",icon:"calculator",label:"Calcul mental",intro:"Calcul mental ! Essaie de trouver la reponse dans ta tete.",tip:"Pour les additions, commence par les dizaines puis ajoute les unites.",n:4}
+};
+
+var DIAGQ=[
+  {subj:"Comprehension de consigne",emoji:"📋",cons:"Lis bien la question, puis choisis la bonne reponse.",tip:"Lis deux fois avant de repondre !",q:"Dans cette phrase, quel mot est le verbe ? : Le chien court dans le jardin.",opts:["chien","jardin","court","dans"],correct:2},
+  {subj:"Accords dans le GN",emoji:"✏️",cons:"Un groupe nominal = determinant + nom + adjectif. Ils s'accordent tous.",tip:"Si le nom est feminin pluriel, le determinant et l'adjectif aussi !",q:"Choisis la bonne orthographe :",opts:["des belles fleurs rouges","des belle fleurs rouge","des belles fleur rouge","des beau fleurs rouges"],correct:0},
+  {subj:"Accord sujet-verbe",emoji:"🔤",cons:"Le verbe s'accorde avec le sujet. Trouve d'abord le sujet !",tip:"Pose la question : Qui est-ce qui... ?",q:"Les oiseaux ___ dans le ciel.",opts:["vole","volent","voles","voler"],correct:1},
+  {subj:"Soustraction posee",emoji:"➖",cons:"Pour soustraire : aligne les chiffres, commence par la droite.",tip:"Si le chiffre du bas est plus grand, tu empruntes a gauche !",q:"Calcule : 423 - 187 = ?",opts:["246","236","346","256"],correct:1},
+  {subj:"Tables de multiplication",emoji:"✖️",cons:"Rappelle-toi ta table ou compte de N en N.",tip:"7x8 = 56. Tu peux compter par 7 !",q:"7 x 8 = ?",opts:["54","63","56","48"],correct:2},
+  {subj:"Lecture et Comprehension",emoji:"📖",cons:"Lis le texte lentement. Cherche la reponse dans le texte.",tip:"Relis la phrase qui repond a la question !",q:"Lea pose son cartable. Elle sort ses crayons et commence a dessiner. Que fait Lea ?",opts:["Elle mange","Elle dort","Elle sort ses crayons","Elle joue"],correct:2}
+];
+
+var PROG={
+  CE2:[
+    {tri:"Trimestre 1",subjs:[{name:"Francais",items:["Lecture 90 mots/min","Automatiser CGP","Phrase simple","Nom/verbe/adjectif","Present indicatif","Sons complexes"]},{name:"Mathematiques",items:["Nombres jusqu'a 10 000","Addition posee","Soustraction posee","Tables x2 x5","Reperage dans l'espace"]},{name:"Questionner le monde",items:["Le calendrier","Les saisons","Le vivant : animaux"]}]},
+    {tri:"Trimestre 2",subjs:[{name:"Francais",items:["Comprehension texte","Accord sujet-verbe","Imparfait","Vocabulaire thematique","Dictee preparee","Accords GN"]},{name:"Mathematiques",items:["Multiplication posee","Tables x3 x4","Fractions simples","Mesures de longueur","Problemes a etapes"]},{name:"Questionner le monde",items:["Carte et plans","Le corps humain","Les etats de la matiere"]}]},
+    {tri:"Trimestre 3",subjs:[{name:"Francais",items:["Texte narratif","Futur simple","Complements du verbe","Homophones","Production d'ecrit"]},{name:"Mathematiques",items:["Division simple","Tables x6-x9","Fractions simples","Aires et perimetres","Lecture de graphiques"]},{name:"Questionner le monde",items:["Paysages France/Maroc","L'eau dans la nature","Frise chronologique"]}]}
+  ],
+  CM1:[
+    {tri:"Trimestre 1",subjs:[{name:"Francais",items:["Lecture 110 mots/min","Nature/fonction des mots","Present/imparfait/futur","Texte documentaire","Prefixes/suffixes","Redaction structuree"]},{name:"Mathematiques",items:["Nombres jusqu'au million","Multiplication 2 chiffres","Toutes les tables","Fractions decimales","Angles"]},{name:"Sciences/Histoire",items:["La Prehistoire","Etats de la matiere","Systeme solaire (intro)"]}]},
+    {tri:"Trimestre 2",subjs:[{name:"Francais",items:["Complements circonstanciels","Passe compose","Texte argumentatif","Synonymes/antonymes","Conjugaison etendue"]},{name:"Mathematiques",items:["Division a 1 chiffre","Fractions et comparaison","Decimaux (intro)","Perimetre et aire","Symetrie"]},{name:"Sciences/Histoire",items:["Antiquite (Egypte, Gaule)","Cycle de l'eau","Leviers et machines"]}]},
+    {tri:"Trimestre 3",subjs:[{name:"Francais",items:["Discours rapporte","Conditionnel (intro)","Texte poetique","Champ lexical","Expose oral"]},{name:"Mathematiques",items:["Operations sur decimaux","Division 2 chiffres","Volumes (intro)","Proportionnalite","Problemes complexes"]},{name:"Sciences/Histoire",items:["Moyen Age (intro)","Les ecosystemes","Electricite simple"]}]}
+  ]
+};
+
+function pickRandom(arr,n){
+  var a=arr.slice().sort(function(){return Math.random()-.5;});
+  return a.slice(0,Math.min(n,a.length));
+}
+
+function addPts(n){ST.pts+=n;document.querySelectorAll('.pts-live').forEach(function(e){e.textContent=ST.pts;});}
+
+function showScreen(name){
+  document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');});
+  var el=document.getElementById('v-'+name);
+  if(el) el.classList.add('active');
+  document.querySelectorAll('.dnav button').forEach(function(b){b.classList.toggle('active',b.dataset.s===name);});
+  window.scrollTo({top:0,behavior:'instant'});
+}
+
+function goTo(name){
+  if(name==='results') renderResults();
+  else if(name==='dash') renderDash();
+  else if(name==='rewards') renderRewards();
+  else if(name==='parent') renderParent();
+  else if(name==='quiz'){ST.quizIdx=0;ST.quizScore=0;renderQuiz();}
+  else if(name==='exercise') renderExMenu();
+  showScreen(name);
+}
+
+function openProg(){ST.ptab='programme';goTo('parent');}
+
+function sb(){
+  return '<div class="sb"><div class="pts"><span class="pts-c">⚡</span><span class="pts-live">'+ST.pts+'</span></div><div class="stk">🔥 '+ST.streak+'j</div><div class="av" onclick="goTo(\'parent\')">'+aliSVG()+'</div></div>';
+}
+
+function bubble(txt,mood){
+  return '<div class="brow"><div class="zwrap">'+zappySVG(mood||'happy')+'</div><div class="bub">'+txt+'</div></div>';
+}
+
+function renderLogin(){
+  return '<div class="view" id="v-login"><div class="hz">'+zappySVG('excited')+'</div><div class="ltitle">L\'Ile d\'Ali !</div><div class="lsub">Ton compagnon d\'aventure scolaire ⚡</div><div class="pcard"><div class="pav">'+aliSVG()+'</div><div class="pname">Ali Margad</div><div class="pmeta">8 ans · CE2 · Ecole Ernest Renan · Casablanca</div><div style="margin-bottom:10px;"><input style="font-family:var(--fa);font-weight:700;font-size:15px;border:3px solid #e0d0ff;border-radius:14px;padding:11px 14px;width:100%;outline:none;background:#fff;" id=\"sni\" placeholder=\"Nom session (ex: Mercredi 25 juin)\" maxlength=\"40\"/></div><button class=\"btn btn-green btn-block\" onclick=\"startSess()\">🚀 Nouvelle session</button><div style=\"height:10px\"></div><button class=\"btn btn-outline btn-block\" style=\"color:var(--purple);font-size:15px;\" onclick=\"openSess()\">📋 Voir les sessions</button></div></div>';
+}
+
+function renderDiag(){
+  return '<div class="view" id="v-diag">'+sb()+bubble('Salut Ali ! Je suis <b>Zappy</b> ⚡<br>On va faire un quiz pour voir ce que tu sais. Pas de stress !','excited')+'<div class="card card-gold"><div style="font-family:var(--fd);font-size:17px;margin-bottom:10px;">📋 Ce qu\'on va explorer :</div><div style="display:flex;flex-wrap:wrap;gap:8px;">'+['📖 Lecture','✏️ Accords GN','🔤 Sujet-Verbe','➖ Soustraction','✖️ Tables'].map(function(p){return '<span style="background:#fff;border:2px solid var(--gold-d);border-radius:999px;padding:6px 12px;font-family:var(--fd);font-size:13px;color:#7a5000;box-shadow:0 3px 0 var(--gold-d);">'+p+'</span>';}).join('')+'</div><p style="font-size:13px;text-align:center;margin-top:12px;font-family:var(--fa);font-weight:600;color:var(--ink-soft);">Environ 5 minutes · Pas de note !</p></div><div style="margin-top:20px;"><button class="btn btn-green btn-block" onclick="goTo(\'quiz\')">C\'est parti ! ⚡</button></div></div>';
+}
+
+function renderQuiz(){
+  var view=document.getElementById('v-quiz');
+  if(ST.quizIdx>=DIAGQ.length){goTo('results');return;}
+  var q=DIAGQ[ST.quizIdx];
+  var pct=Math.round(ST.quizIdx/DIAGQ.length*100);
+  view.innerHTML=sb()+'<div class="pw"><div class="pt"><div class="pf" style="width:'+pct+'%"></div></div><div class="pl">'+(ST.quizIdx+1)+'/'+DIAGQ.length+'</div></div>'+bubble(q.subj+' !<span class="tip">💡 '+q.tip+'</span>','thinking')+'<div class="qcard"><div class="qsubj">'+q.emoji+' '+q.subj+'</div><div class="qcons">📋 '+q.cons+'</div><div class="qtext">'+q.q+'</div></div><div class="opts" id="qO">'+q.opts.map(function(o,i){return '<button class="opt" onclick="ansQ('+i+')"><span class="olet">'+'ABCD'[i]+'</span>'+o+'</button>';}).join('')+'</div>';
+}
+
+function ansQ(i){
+  var q=DIAGQ[ST.quizIdx];
+  var opts=document.querySelectorAll('#qO .opt');
+  opts.forEach(function(o){o.onclick=null;});
+  opts[q.correct].classList.add('correct');
+  if(i!==q.correct) opts[i].classList.add('wrong'); else ST.quizScore++;
+  setTimeout(function(){ST.quizIdx++;renderQuiz();},900);
+}
+
+function renderResults(){
+  var view=document.getElementById('v-results');
+  var sd=[['Comprehension consigne',65,'var(--coral)'],['Accords GN',50,'var(--coral)'],['Accord sujet-verbe',70,'var(--gold-d)'],['Soustraction',55,'var(--coral)'],['Multiplication',45,'var(--coral)'],['Lecture',72,'var(--gold-d)'],['Calcul mental',68,'var(--sky)'],['Geometrie',72,'var(--green)']];
+  view.innerHTML=sb()+'<div style="text-align:center;padding:10px 0 4px;"><div style="font-size:50px;">🎉</div><h2 style="font-family:var(--fd);font-size:22px;">Super Ali, diagnostic termine !</h2></div>'+bubble('J\'ai tout note ! Tu es deja fort en geometrie ! On va travailler le reste ensemble 💪','excited')+'<div class="card" style="margin-bottom:14px;"><div class="skl">'+sd.map(function(s){return '<div class="ski"><div class="skh"><span>'+s[0]+'</span><span>'+s[1]+'%</span></div><div class="skt"><div class="skf" style="width:'+s[1]+'%;background:'+s[2]+';"></div></div></div>';}).join('')+'</div></div><div class="st">🎯 Priorites du bilan (Mme la maitresse)</div><div class="plist"><div class="pitem"><span class="pbadge">P1</span><div><div class="ptitle2">Comprehension des consignes</div><div class="pdesc">Ali comprend quand on lui explique par des exemples</div></div></div><div class="pitem p2"><span class="pbadge">P2</span><div><div class="ptitle2">Accords GN + Sujet-Verbe</div><div class="pdesc">Revoir les accords dans le groupe nominal</div></div></div><div class="pitem p3"><span class="pbadge">P3</span><div><div class="ptitle2">Soustraction et multiplication posees</div><div class="pdesc">Revoir la technique operatoire posee</div></div></div><div class="pitem p4"><span class="pbadge">P4</span><div><div class="ptitle2">Lecture + comprehension de texte</div><div class="pdesc">Courtes lectures avec retour sur la comprehension</div></div></div></div><div style="margin-top:22px;"><button class="btn btn-green btn-block" onclick="goTo(\'dash\')">Decouvrir mon ile ! 🏝️</button></div>';
+}
+
+function renderDash(){
+  var view=document.getElementById('v-dash');
+  view.innerHTML=sb()+'<div class="dh">Salut Ali ! 👋</div>'+bubble('Aujourd\'hui on commence par la soustraction posee — la priorite de ta maitresse ! Pret ?','happy')+'<div class="icard" onclick="goTo(\'island\')"><div class="ilbl">🏝️ Mon ile — Niveau 4</div><span class="ideco" style="top:20px;right:22px;font-size:36px;">🌴</span><span class="ideco" style="top:55px;right:72px;font-size:24px;">⚡</span><span class="ideco" style="top:30px;left:80px;font-size:28px;">🏰</span><div class="istats"><div class="istat">🏠 6 batiments</div><div class="istat">🐾 3 creatures</div></div></div><div class="mt">📋 Missions du jour</div><div class="mc done"><div class="mi">📖</div><div class="mb"><div class="mn">Mission 1 — Rappel du cours</div><div class="md">La soustraction posee avec Zappy</div></div><div class="mchk">✓</div></div><div class="mc" onclick="goTo(\'exercise\')"><div class="mi m2">➖</div><div class="mb"><div class="mn">Mission 2 — Exercice</div><div class="md">Choisis ta matiere · 5 min max</div></div><div class="mpts">+10 ⚡</div></div><div class="mc locked"><div class="mi m3">🏆</div><div class="mb"><div class="mn">Mission 3 — Defi bonus</div><div class="md">Debloque apres la mission 2</div></div><div class="mpts">+20 ⚡</div></div><div style="display:flex;gap:10px;margin-top:16px;"><button class="btn btn-outline" style="flex:1;font-size:14px;color:var(--purple);padding:12px;" onclick="goTo(\'rewards\')">🛍️ Boutique</button><button class="btn btn-outline" style="flex:1;font-size:14px;color:var(--teal);padding:12px;" onclick="goTo(\'badges\')">🏅 Badges</button></div><div style="margin-top:10px;"><button class="btn btn-gold btn-block" style="font-size:17px;padding:13px;" onclick="openProg()">📘 Programme AEFE CE2 / CM1</button></div>';
+}
+
+function renderExMenu(){
+  var view=document.getElementById('v-exercise');
+  ST.exStep=0;ST.exCorrect=0;ST.exQs=[];
+  var sets=[
+    {k:'soustraction',c:'var(--coral)'},
+    {k:'multiplication',c:'var(--gold-d)'},
+    {k:'gn_accord',c:'var(--sky)'},
+    {k:'sujet_verbe',c:'var(--teal)'},
+    {k:'lecture',c:'var(--green)'},
+    {k:'calcul_mental',c:'var(--purple)'}
+  ];
+  var cards=sets.map(function(s){
+    var ex=EXOSETS[s.k];
+    return '<div class="emenu-card" onclick="startEx(\''+s.k+'\')" style="border-left:6px solid '+s.c+';"><div class="mi" style="background:'+s.c+'22;border-color:'+s.c+';box-shadow:0 4px 0 '+s.c+'88;">'+ex.icon+'</div><div class="mb"><div class="mn">'+ex.label+'</div><div class="md">Questions variees · IA ou banque locale</div></div><div style="font-size:20px;">→</div></div>';
+  }).join('');
+  view.innerHTML=sb()+'<div class="dh" style="font-size:24px;">Quelle matiere ? 🎯</div>'+bubble('Choisis ta mission ! Je prepare de nouvelles questions pour toi ⚡','excited')+'<div style="margin-top:8px;">'+cards+'</div><div style="margin-top:14px;"><button class="btn btn-gold btn-block" onclick="goTo(\'dash\')">← Retour au tableau de bord</button></div>';
+}
+
+function startEx(setKey){
+  ST.exSet=setKey;
+  ST.exStep=0;
+  ST.exCorrect=0;
+  var view=document.getElementById('v-exercise');
+  view.innerHTML=sb()+'<div class="loading"><div class="lico">⚡</div><div class="ltxt">Zappy prepare tes questions...</div><div class="lsub">Generation par intelligence artificielle</div></div>';
+  showScreen('exercise');
+  generateAI(setKey,function(qs){
+    ST.exQs=qs||pickRandom(QBANK[setKey],EXOSETS[setKey].n);
+    renderEx();
+  });
+}
+
+function generateAI(setKey,cb){
+  var prompts={
+    soustraction:'Genere 4 exercices de soustraction posee niveau CE2. Reponds UNIQUEMENT avec un tableau JSON valide. Exemple format : [{"q":"352-128=?","opts":["224","234","214","244"],"correct":0}]. 4 objets, cles q opts correct.',
+    multiplication:'Genere 4 exercices tables de multiplication (6,7,8,9) CE2. Tableau JSON uniquement. Format : [{"q":"6x9=?","opts":["54","48","56","63"],"correct":0}].',
+    gn_accord:'Genere 3 exercices accord groupe nominal CE2. Tableau JSON uniquement. Format : [{"q":"Choisis...","opts":["A","B","C","D"],"correct":0}].',
+    sujet_verbe:'Genere 3 exercices accord sujet-verbe CE2. Tableau JSON uniquement. Format : [{"q":"Les enfants ___ au parc.","opts":["joue","jouent","joues","jouer"],"correct":1}].',
+    lecture:'Genere 3 exercices comprehension lecture CE2. Tableau JSON uniquement. Format : [{"texte":"Lea pose...","q":"Que fait...?","opts":["A","B","C","D"],"correct":0}].',
+    calcul_mental:'Genere 4 exercices calcul mental CE2. Tableau JSON uniquement. Format : [{"q":"58+37=?","opts":["85","95","94","96"],"correct":1}].'
+  };
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:800,messages:[{role:'user',content:prompts[setKey]}]})
+  }).then(function(r){return r.json();}).then(function(data){
+    try{
+      var txt=(data.content||[]).map(function(c){return c.text||'';}).join('');
+      var clean=txt.replace(/[\u0060]{3}json|[\u0060]{3}/g,'').trim();
+      var qs=JSON.parse(clean);
+      if(Array.isArray(qs)&&qs.length>0) cb(qs); else cb(null);
+    }catch(e){cb(null);}
+  }).catch(function(){cb(null);});
+}
+
+function renderEx(){
+  var view=document.getElementById('v-exercise');
+  var qs=ST.exQs;
+  var set=EXOSETS[ST.exSet];
+  if(ST.exStep>=qs.length){renderExComplete();return;}
+  var q=qs[ST.exStep];
+  view.innerHTML=sb()+'<div style="display:flex;align-items:center;gap:10px;margin:12px 0 6px;"><button style="width:38px;height:38px;border-radius:50%;background:#fff;border:3px solid #e0d0ff;font-size:16px;cursor:pointer;box-shadow:var(--shs);" onclick="renderExMenu();showScreen(\'exercise\');">←</button><div class="pl">'+set.icon+' '+set.title+' — Question '+(ST.exStep+1)+'/'+qs.length+'</div><div style="margin-left:auto;display:flex;gap:3px;">❤️❤️❤️</div></div>'+bubble(set.intro+'<span class="tip">💡 '+set.tip+'</span>','thinking')+(q.texte?'<div style="background:#f0f8ff;border:2px solid var(--sky);border-radius:14px;padding:14px;margin-bottom:12px;font-family:var(--fa);font-weight:700;font-size:14px;line-height:1.6;color:var(--ink);">📖 '+q.texte+'</div>':'')+'<div class="qcard"><div class="qcons">📋 Lis bien et prends le temps de reflechir avant de repondre.</div><div class="qtext">'+q.q+'</div></div><div class="opts" id="eO">'+q.opts.map(function(o,i){return '<button class="opt" onclick="ansEx('+i+')"><span class="olet">'+'ABCD'[i]+'</span>'+o+'</button>';}).join('')+'</div><div class="fb" id="eFb"></div>';
+}
+
+function ansEx(i){
+  var q=ST.exQs[ST.exStep];
+  var opts=document.querySelectorAll('#eO .opt');
+  opts.forEach(function(o){o.onclick=null;});
+  var fb=document.getElementById('eFb');
+  opts[q.correct].classList.add('correct');
+  if(i!==q.correct){opts[i].classList.add('wrong');fb.className='fb show bad';fb.innerHTML='Oups ! Ce n\'est pas grave 💪<br>La bonne reponse est en vert.';}
+  else{ST.exCorrect++;addPts(5);fb.className='fb show good';fb.innerHTML='Bravo Ali ! +5 PokePoints ⚡<br>Zappy est fier de toi !';confetti();}
+  setTimeout(function(){ST.exStep++;renderEx();},1200);
+}
+
+function renderExComplete(){
+  var view=document.getElementById('v-exercise');
+  addPts(10);
+  var setKeys=Object.keys(EXOSETS);
+  var btns=setKeys.map(function(k){return '<button class="btn btn-purple" style="font-size:14px;padding:10px 16px;" onclick="startEx(\''+k+'\')">'+EXOSETS[k].icon+' '+EXOSETS[k].label+'</button>';}).join('');
+  view.innerHTML=sb()+'<div class="cwrap"><div class="czappy">'+zappySVG('excited')+'</div><h2 style="font-family:var(--fd);font-size:24px;">Mission accomplie !</h2><p style="font-family:var(--fa);font-weight:700;margin:10px auto;max-width:280px;color:var(--ink-soft);">Tu as reussi '+ST.exCorrect+'/'+ST.exQs.length+' questions !</p><div class="cpts">+10 PokePoints ⚡</div><br><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:8px;">'+btns+'</div><div style="height:14px;"></div><button class="btn btn-gold btn-block" onclick="goTo(\'dash\')">Retour a l\'ile 🏝️</button></div>';
+  confetti();
+}
+
+function renderRewards(){
+  var view=document.getElementById('v-rewards');
+  var items=[{ic:"🍨",nm:"Choisir le dessert",cost:50},{ic:"🎬",nm:"Film en famille",cost:100},{ic:"🚲",nm:"Petite sortie",cost:150},{ic:"📕",nm:"Nouveau livre Pokemon",cost:250},{ic:"🎁",nm:"Cadeau special",cost:500}];
+  view.innerHTML=sb()+'<div class="ptsbanner"><div class="ptsbig">'+ST.pts+' ⚡</div><div class="ptslbl">PokePoints disponibles</div></div><div class="st">🛍️ Boutique des recompenses</div><div class="ss">Configuree par tes parents !</div><div class="shoplist">'+items.map(function(it){var a=ST.pts>=it.cost;return '<div class="shopitem '+(a?'afford':'')+'"><div class="shopic">'+it.ic+'</div><div style="flex:1;"><div class="shopnm">'+it.nm+'</div><div class="shopcost">'+it.cost+' points</div></div><button class="shopbtn" '+(a?'':'disabled')+" onclick=\"redeem("+it.cost+",this)\">Echanger</button></div>";}).join('')+'</div>';
+}
+
+function redeem(cost,btn){
+  if(ST.pts<cost) return;
+  addPts(-cost);btn.textContent='✓ Demande !';btn.disabled=true;confetti();
+  setTimeout(renderRewards,1200);
+}
+
+function renderIsland(){
+  return '<div class="view" id="v-island">'+sb()+'<div class="st">🏝️ L\'Ile d\'Ali</div><div class="ss">Chaque exercice reussi fait grandir ton ile !</div><div class="icard" style="min-height:230px;"><div class="ilbl">Niveau 4 · 6 batiments</div><span class="ideco" style="top:28px;left:28px;font-size:34px;">🏠</span><span class="ideco" style="top:62px;left:110px;font-size:26px;">🌳</span><span class="ideco" style="top:36px;right:36px;font-size:34px;">🏰</span><span class="ideco" style="top:108px;left:55px;font-size:28px;">⚡</span><span class="ideco" style="top:112px;right:75px;font-size:26px;">🐉</span><div class="istats"><div class="istat">🏠 6 batiments</div><div class="istat">🐾 3 creatures</div></div></div><div class="card"><div style="font-family:var(--fd);font-size:16px;margin-bottom:10px;">🐾 Creatures debloquees</div><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;"><div style="width:48px;height:48px;">'+zappySVG('happy')+'</div><span style="font-size:32px;">🐢</span><span style="font-size:32px;">🔥</span><span style="font-size:32px;opacity:.3;">❓</span><span style="font-size:32px;opacity:.3;">❓</span></div><p style="font-size:13px;margin-top:10px;font-family:var(--fa);font-weight:600;color:var(--ink-soft);">Reussis la Mission 3 pour debloquer la prochaine creature !</p></div></div>';
+}
+
+function renderBadges(){
+  var bs=[{em:"🥇",nm:"Champion de Lecture",u:true},{em:"➕",nm:"Maitre des Additions",u:true},{em:"🔥",nm:"Serie 7 jours",u:true},{em:"✖️",nm:"Maitre des Tables",u:false},{em:"🔬",nm:"Explorateur Sciences",u:false},{em:"✏️",nm:"As de l'Orthographe",u:false},{em:"📐",nm:"Genie Geometrie",u:false},{em:"🌍",nm:"Globe-trotter",u:false},{em:"👑",nm:"Roi du CE2",u:false}];
+  return '<div class="view" id="v-badges">'+sb()+'<div class="st">🏅 Mes badges</div><div class="ss">3 badges debloques sur 9</div><div class="bgrid">'+bs.map(function(b){return '<div class="btile '+(b.u?'unlocked':'locked')+'"><div class="bem">'+(b.u?b.em:'🔒')+'</div><div class="bnm">'+b.nm+'</div></div>';}).join('')+'</div><div class="card" style="margin-top:16px;text-align:center;"><p style="font-size:13px;font-family:var(--fa);font-weight:700;color:var(--ink-soft);">🔓 Quand le CE2 est maitrise, le <b>Monde CM1</b> s\'ouvre !</p></div></div>';
+}
+
+function renderParent(){
+  var view=document.getElementById('v-parent');
+  view.innerHTML='<div class="pw2"><div class="pt2"><h2>👨‍👩‍👦 Espace Parents</h2><button class="bk" onclick="goTo(\'dash\')">↩ Vue Ali</button></div><div class="psr"><div class="pst"><div class="pstn">4j</div><div class="pstl">Serie en cours</div></div><div class="pst"><div class="pstn">38min</div><div class="pstl">Temps auj.</div></div><div class="pst"><div class="pstn">'+ST.pts+'</div><div class="pstl">PokePoints</div></div></div><div class="ptabs"><div class="ptab '+(ST.ptab==='programme'?'active':'')+'" onclick="setPTab(\'programme\')">📘 Programme AEFE</div><div class="ptab '+(ST.ptab==='stats'?'active':'')+'" onclick="setPTab(\'stats\')">📊 Stats</div><div class="ptab '+(ST.ptab==='bilan'?'active':'')+'" onclick="setPTab(\'bilan\')">📋 Bilan maitresse</div><div class="ptab '+(ST.ptab==='rewards'?'active':'')+'" onclick="setPTab(\'rewards\')">🎁 Recompenses</div></div><div class="pbody" id="ptc"></div></div>';
+  renderPTab();
+}
+
+function setPTab(t){ST.ptab=t;renderParent();}
+
+function renderPTab(){
+  var el=document.getElementById('ptc');
+  if(!el) return;
+  if(ST.ptab==='stats') el.innerHTML=pStats();
+  else if(ST.ptab==='bilan') el.innerHTML=pBilan();
+  else if(ST.ptab==='programme') el.innerHTML=pProg();
+  else if(ST.ptab==='rewards') el.innerHTML=pRewards();
+}
+
+function pSessions(){var sess=getSess();var cur='';if(ST.sResults&&ST.sResults.length>0){cur='<div class="pc2" style="border:2px solid #d9a000;"><h3>📂 Session en cours: '+ST.sName+'</h3>'+ST.sResults.map(function(r){var col=r.score>=80?'#a5d6a7':r.score>=50?'#ffe984':'#ffb3b3';return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);font-family:var(--fa);font-weight:600;font-size:13px;color:#d8c8ff;"><span>'+r.type+'</span><span style="font-family:var(--fd);font-size:16px;color:'+col+';">'+r.correct+'/'+r.total+' ('+r.score+'%)</span></div>';}).join('')+'<div style="margin-top:12px;"><button class="btn btn-coral" style="width:100%;font-size:15px;" onclick="saveAndEnd()">💾 Terminer et enregistrer</button></div></div>';}if(!sess.length&&(!ST.sResults||!ST.sResults.length)){return cur+'<div class="pc2"><h3>📋 Historique</h3><p style="color:#c9a8ff;font-size:13px;font-family:var(--fa);font-weight:600;">Aucune session. Commence depuis connexion!</p></div>';}var hist=sess.map(function(s){var r=s.results&&s.results.length?s.results.map(function(r){var col=r.score>=80?'#a5d6a7':r.score>=50?'#ffe984':'#ffb3b3';return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);font-family:var(--fa);font-weight:600;font-size:12px;color:#d8c8ff;"><span>'+r.type+'</span><span style="font-family:var(--fd);color:'+col+';">'+r.correct+'/'+r.total+' ('+r.score+'%)</span></div>';}).join(''):'<p style="color:#c9a8ff;font-size:12px;font-family:var(--fa);">Aucun exercice</p>';return '<div style="background:rgba(255,255,255,.08);border-radius:16px;padding:14px;margin-bottom:10px;cursor:pointer;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display===\'block\'?\'none\':\'block\'"><div style="font-family:var(--fd);font-size:15px;color:#fff;">📂 '+s.name+'</div><div style="font-size:12px;color:#c9a8ff;font-family:var(--fa);font-weight:600;">'+fmtD(s.date)+' · '+s.pts+' pts · '+(s.results?s.results.length:0)+' exercice(s)</div></div><div style="display:none;background:rgba(255,255,255,.05);padding:12px;margin-bottom:10px;">'+r+'</div>';}).join('');return cur+'<div class="pc2"><h3>📋 Historique ('+sess.length+')</h3>'+hist+'</div>';}
+function pStats(){
+  var bars=[['Comprehension consigne',65,'var(--coral)'],['Accords GN',50,'var(--coral)'],['Accord sujet-verbe',70,'var(--gold-d)'],['Soustraction',55,'var(--coral)'],['Multiplication',45,'var(--coral)'],['Lecture',72,'var(--gold-d)'],['Calcul mental',68,'var(--sky)'],['Geometrie',72,'var(--green)']];
+  return '<div class="pc2"><h3>📊 Progression par competence</h3>'+bars.map(function(s){return '<div class="spr2"><div class="spr2-t"><span>'+s[0]+'</span><span>'+s[1]+'%</span></div><div class="spr2-tr"><div class="spr2-f" style="width:'+s[1]+'%;background:'+s[2]+';"></div></div></div>';}).join('')+'</div><div class="pc2"><h3>⚠️ Alertes</h3><div class="alt"><div>🔴</div><div class="alt-t"><b>Difficulte persistante :</b> Accords GN et soustraction posee — priorites identifiees par Mme la maitresse.</div></div><div class="alt" style="background:rgba(249,198,33,.1);border-color:rgba(249,198,33,.3);"><div>🟡</div><div class="alt-t" style="color:#ffe9a8;"><b>A surveiller :</b> Multiplication — progres reguliers necessaires.</div></div></div><div class="pc2"><h3>💡 Recommandations</h3><div class="rco"><div>✅</div><div class="rco-t">Faire oraliser a Ali ce qu\'on attend de lui avant chaque exercice.</div></div><div class="rco"><div>✅</div><div class="rco-t">Courtes lectures 10 min/jour avec questions de comprehension a l\'oral.</div></div><div class="rco"><div>✅</div><div class="rco-t">Revoir la technique de soustraction posee et tables de 6, 7, 8.</div></div></div>';
+}
+
+function pBilan(){
+  return '<div class="pc2"><h3>📋 Bilan Mme la maitresse — CE2 Ernest Renan</h3><div class="rco" style="margin-bottom:12px;"><div>📝</div><div class="rco-t" style="font-style:italic;">"Ali obtient des resultats assez bien en francais et mathematiques. Il semble attentif mais frequemment ne comprend pas les consignes en autonomie."</div></div><div class="alt"><div>🔴</div><div class="alt-t"><b>Point cle :</b> Ses erreurs sont dues a une incomprehension, pas une incapacite. Il peut parfaitement reussir quand la consigne est clarifiee.</div></div><div class="alt" style="background:rgba(249,198,33,.1);border-color:rgba(249,198,33,.3);"><div>⚡</div><div class="alt-t" style="color:#ffe9a8;"><b>Comportement :</b> Ali peut sembler inquiet et vouloir repondre immediatement, s\'eloignant de la reponse attendue.</div></div><div class="pc2" style="background:rgba(76,175,80,.08);border-radius:12px;padding:14px;margin-top:4px;"><div style="font-family:var(--fd);font-size:15px;color:#c8f7d8;margin-bottom:10px;">✅ Conseils de la maitresse</div>'+["Courtes lectures avec retour systematique sur la comprehension","Revoir les accords GN et accord sujet-verbe","Faire justifier a l'oral ses choix","Revoir la technique operatoire de la soustraction et multiplication"].map(function(c){return '<div class="rco" style="margin-bottom:8px;"><div>👉</div><div class="rco-t">'+c+'</div></div>';}).join('')+'</div></div>';
+}
+
+function pProg(){
+  var data=PROG[ST.plvl];
+  var src=ST.plvl==='CE2'?'BO oct. 2024 — Cycle 2':'BO avr. 2025 — Cycle 3';
+  return '<div class="pc2"><h3>📘 Programme officiel '+ST.plvl+'</h3><p style="color:#c9a8ff;font-size:12px;margin-bottom:12px;font-family:var(--fa);font-weight:600;">Source : '+src+' · Applicable rentree 2025 · Identique dans tous les etablissements AEFE homologues</p><div class="pgrid"><div class="pbtn2 '+(ST.plvl==='CE2'?'active':'')+'" onclick="setPlvl(\'CE2\')">CE2 — Cycle 2</div><div class="pbtn2 '+(ST.plvl==='CM1'?'active':'')+'" onclick="setPlvl(\'CM1\')">CM1 — Cycle 3</div></div>'+data.map(function(tri){return '<div class="ptri">📅 '+tri.tri+'</div>'+tri.subjs.map(function(s){return '<div class="psubj"><div class="psubjn">'+s.name+'</div><div class="ptags">'+s.items.map(function(i){return '<span class="ptag">'+i+'</span>';}).join('')+'</div></div>';}).join('');}).join('')+'</div><div class="pc2" style="background:rgba(76,175,80,.08);"><h3>🔓 Passerelle CE2 → CM1</h3><div class="rco"><div>🎯</div><div class="rco-t">Le Monde CM1 se debloque quand les competences cles du CE2 atteignent 80% de maitrise.</div></div><div class="rco"><div>📌</div><div class="rco-t">Les programmes AEFE sont identiques aux programmes de l\'Education Nationale. L\'homologation le garantit.</div></div></div>';
+}
+
+function setPlvl(l){ST.plvl=l;renderPTab();}
+
+function pRewards(){
+  return '<div class="pc2"><h3>🎁 Configurer les recompenses</h3>'+[['🍨','Choisir le dessert — 50 pts',true],['🎬','Film en famille — 100 pts',true],['🚲','Petite sortie — 150 pts',true],['📕','Livre Pokemon — 250 pts',true],['🎁','Cadeau special — 500 pts',false]].map(function(r){return '<div class="rrow"><span>'+r[0]+' '+r[1]+'</span><div class="tgl '+(r[2]?'on':'')+'" onclick="this.classList.toggle(\'on\')"></div></div>';}).join('')+'</div>';
+}
+
+function confetti(){
+  var cols=['#f9c621','#4caf50','#ff6b6b','#4fc3f7','#9b59f5','#00b8a9'];
+  for(var i=0;i<28;i++){
+    var p=document.createElement('div');
+    p.className='cfp';
+    var s=7+Math.random()*8;
+    p.style.cssText='width:'+s+'px;height:'+(s*.4)+'px;left:'+(Math.random()*100)+'vw;background:'+cols[Math.floor(Math.random()*cols.length)]+';animation-duration:'+(1.5+Math.random()*1.5)+'s;border-radius:'+(Math.random()>.5?'50%':'3px')+';';
+    document.body.appendChild(p);
+    setTimeout(function(){p.remove();},3200);
+  }
+}
+
+
+function saveAndEnd(){var sess={name:ST.sName,date:Date.now(),pts:ST.pts,results:ST.sResults.slice()};saveSess(sess);confetti();var v=document.getElementById('v-dash');v.innerHTML=sb()+'<div class="cwrap"><div style="font-size:60px;margin-bottom:10px;">💾</div><h2 style="font-family:var(--fd);font-size:24px;">Session enregistree!</h2><p style="font-family:var(--fa);font-weight:700;margin:10px auto;max-width:280px;color:var(--ink-soft);">'+ST.sName+' — '+ST.pts+' PokePoints</p><div style="margin-top:20px;display:flex;flex-direction:column;gap:10px;"><button class="btn btn-purple btn-block" onclick="openSess()">📋 Voir les sessions</button><button class="btn btn-gold btn-block" onclick="goTo('+"'"+'login'+"'"+')">🚀 Nouvelle session</button></div></div>';}
+function startSess(){var n=document.getElementById('sni');if(!n||!n.value.trim()){alert('Donne un nom!');return;}ST.sName=n.value.trim();ST.pts=0;ST.streak=0;ST.sResults=[];goTo('diag');}
+function getSess(){try{return JSON.parse(localStorage.getItem('ali_sess')||'[]');}catch(e){return[];}}
+function saveSess(s){var a=getSess();a.unshift(s);if(a.length>20)a=a.slice(0,20);try{localStorage.setItem('ali_sess',JSON.stringify(a));}catch(e){}}
+function fmtD(ts){var d=new Date(ts);return d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear()+' '+d.getHours()+'h'+String(d.getMinutes()).padStart(2,'0');}
+function scC(p){return p>=80?'#a5d6a7':p>=50?'#ffe984':'#ffb3b3';}
+function saveAndEnd(){var s={name:ST.sName,date:Date.now(),pts:ST.pts,results:ST.sResults.slice()};saveSess(s);confetti();renderDash();}
+function openSess(){ST.ptab='sessions';goTo('parent');}
+
+function init(){
+  var app=document.getElementById('app');
+  app.innerHTML=renderLogin()+renderDiag()+'<div class="view" id="v-quiz"></div><div class="view" id="v-results"></div><div class="view" id="v-dash"></div><div class="view" id="v-exercise"></div><div class="view" id="v-rewards"></div>'+renderIsland()+renderBadges()+'<div class="view" id="v-parent"></div>';
+  var dn=document.getElementById('dn');
+  dn.innerHTML=SCREENS.map(function(s){return '<button data-s="'+s+'" onclick="goTo(\''+s+'\')">'+NLABELS[s]+'</button>';}).join('');
+  showScreen('login');
+}
+document.addEventListener('DOMContentLoaded',init);
+</script>
+
+<style>
+.music-btn{
+  position:fixed;bottom:62px;right:12px;z-index:200;
+  width:44px;height:44px;border-radius:50%;
+  background:linear-gradient(135deg,#2a0a3a,#6a0dad);
+  border:3px solid #9b59f5;
+  box-shadow:0 4px 0 #4a0080,0 6px 12px rgba(0,0,0,.4);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;cursor:pointer;
+  transition:transform .15s;
+  animation:glowPulse 2s ease-in-out infinite;
+}
+@keyframes glowPulse{
+  0%,100%{box-shadow:0 4px 0 #4a0080,0 6px 12px rgba(0,0,0,.4),0 0 8px rgba(155,89,245,.4);}
+  50%{box-shadow:0 4px 0 #4a0080,0 6px 12px rgba(0,0,0,.4),0 0 18px rgba(155,89,245,.8);}
+}
+.music-btn:active{transform:scale(.9);}
+.music-btn.muted{background:linear-gradient(135deg,#1a1a1a,#333);border-color:#555;box-shadow:0 4px 0 #222;animation:none;}
+</style>
+
+<button class="music-btn" id="musicBtn" onclick="toggleMusic()" title="Musique">🎃</button>
+
+<script>
+var audioCtx=null;
+var musicPlaying=false;
+var musicNodes=[];
+var loopTimeout=null;
+
+// ── Mélodie originale inspirée de l'esprit de Thriller ──
+// Riff de basse syncopé en mi mineur, ambiance funky-horror
+// Composition originale — pas une reproduction de l'oeuvre
+
+var BPM=100;
+var BEAT=60/BPM;
+var S=BEAT/2;   // croche
+var Q=BEAT;     // noire
+var H=BEAT*2;   // blanche
+
+// Riff de basse principal (E mineur pentatonique, syncopé)
+var BASS_RIFF=[
+  [82.41,S*0.9],[0,S*0.1],   // mi2 court
+  [82.41,S*0.9],[0,S*0.1],   // mi2
+  [0,    S],                  // silence
+  [110.0,S*0.9],[0,S*0.1],   // la2
+  [98.00,Q*0.9],[0,Q*0.1],   // sol2
+  [82.41,S*0.9],[0,S*0.1],   // mi2
+  [0,    S],                  // silence
+  [73.42,S*0.9],[0,S*0.1],   // re2
+  [82.41,H*0.9],[0,H*0.1],   // mi2 long
+  [0,    Q],                  // silence
+];
+
+// Mélodie principale (ambiance mystérieuse, esprit Thriller)
+var MELODY_RIFF=[
+  [0,    Q],                  // silence intro
+  [329.63,S*0.85],[0,S*0.15], // mi4
+  [329.63,S*0.85],[0,S*0.15], // mi4
+  [392.00,S*0.85],[0,S*0.15], // sol4
+  [329.63,Q*0.85],[0,Q*0.15], // mi4
+  [0,    S],
+  [293.66,S*0.85],[0,S*0.15], // re4
+  [329.63,H*0.85],[0,H*0.15], // mi4 tenu
+  [0,    Q],
+  [349.23,S*0.85],[0,S*0.15], // fa4
+  [329.63,S*0.85],[0,S*0.15], // mi4
+  [293.66,Q*0.85],[0,Q*0.15], // re4
+  [261.63,H*0.85],[0,H*0.15], // do4
+  [0,    Q],
+  [329.63,S*0.85],[0,S*0.15], // mi4
+  [392.00,S*0.85],[0,S*0.15], // sol4
+  [440.00,Q*0.85],[0,Q*0.15], // la4
+  [0,    S],
+  [415.30,S*0.85],[0,S*0.15], // sol#4 (note dissonante = frisson)
+  [392.00,H*0.85],[0,H*0.15], // sol4
+  [0,    Q],
+];
+
+// Contrepoint (voix haute, effet mystérieux)
+var COUNTER=[
+  [0,    H*2],
+  [523.25,S*0.7],[0,S*0.3],   // do5
+  [493.88,S*0.7],[0,S*0.3],   // si4
+  [523.25,Q*0.7],[0,Q*0.3],   // do5
+  [0,    Q],
+  [587.33,S*0.7],[0,S*0.3],   // re5
+  [523.25,H*0.7],[0,H*0.3],   // do5
+  [0,    H],
+  [493.88,Q*0.7],[0,Q*0.3],   // si4
+  [466.16,Q*0.7],[0,Q*0.3],   // sib4 (blue note)
+  [440.00,H*0.7],[0,H*0.3],   // la4
+  [0,    H*2],
+];
+
+// Percussion synthétique (kick + snare simulés)
+var KICK_PATTERN=[Q,Q,Q,Q,Q,Q,Q,Q]; // kick sur chaque temps
+var SNARE_BEATS=[1,3,5,7];           // snare sur temps 2 et 4
+
+function initAudio(){
+  if(audioCtx) return true;
+  try{
+    audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    return true;
+  }catch(e){return false;}
+}
+
+function playTone(freq,start,dur,vol,type,detune){
+  if(!audioCtx||freq===0) return;
+  var osc=audioCtx.createOscillator();
+  var gain=audioCtx.createGain();
+  var filter=audioCtx.createBiquadFilter();
+  filter.type='lowpass';
+  filter.frequency.value=type==='sawtooth'?800:4000;
+  osc.connect(filter);
+  filter.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.type=type||'sine';
+  if(detune) osc.detune.value=detune;
+  osc.frequency.setValueAtTime(freq,start);
+  gain.gain.setValueAtTime(0,start);
+  gain.gain.linearRampToValueAtTime(vol,start+0.015);
+  gain.gain.exponentialRampToValueAtTime(0.001,start+dur*0.92);
+  osc.start(start);
+  osc.stop(start+dur);
+  musicNodes.push(osc);
+}
+
+function playKick(start){
+  if(!audioCtx) return;
+  var osc=audioCtx.createOscillator();
+  var gain=audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.type='sine';
+  osc.frequency.setValueAtTime(160,start);
+  osc.frequency.exponentialRampToValueAtTime(40,start+0.15);
+  gain.gain.setValueAtTime(0.18,start);
+  gain.gain.exponentialRampToValueAtTime(0.001,start+0.25);
+  osc.start(start);
+  osc.stop(start+0.3);
+  musicNodes.push(osc);
+}
+
+function playSnare(start){
+  if(!audioCtx) return;
+  var buf=audioCtx.createBuffer(1,audioCtx.sampleRate*0.15,audioCtx.sampleRate);
+  var data=buf.getChannelData(0);
+  for(var i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*0.5;
+  var src=audioCtx.createBufferSource();
+  var gain=audioCtx.createGain();
+  var filter=audioCtx.createBiquadFilter();
+  filter.type='highpass';
+  filter.frequency.value=1200;
+  src.buffer=buf;
+  src.connect(filter);
+  filter.connect(gain);
+  gain.connect(audioCtx.destination);
+  gain.gain.setValueAtTime(0.12,start);
+  gain.gain.exponentialRampToValueAtTime(0.001,start+0.12);
+  src.start(start);
+  musicNodes.push(src);
+}
+
+function scheduleLoop(){
+  if(!musicPlaying||!audioCtx) return;
+  var now=audioCtx.currentTime+0.05;
+  var t=now;
+
+  // Calcul durée totale du loop (basé sur le riff le plus long)
+  var bassLen=BASS_RIFF.reduce(function(s,n){return s+n[1];},0);
+  var melLen=MELODY_RIFF.reduce(function(s,n){return s+n[1];},0);
+  var loopLen=Math.max(bassLen,melLen)*2; // 2 répétitions
+
+  // Basse × 2
+  var bt=now;
+  for(var rep=0;rep<2;rep++){
+    for(var i=0;i<BASS_RIFF.length;i++){
+      playTone(BASS_RIFF[i][0],bt,BASS_RIFF[i][1],0.12,'sawtooth');
+      bt+=BASS_RIFF[i][1];
+    }
+  }
+
+  // Mélodie × 2 (légèrement décalée pour le groove)
+  var mt=now+S*0.5;
+  for(var rep2=0;rep2<2;rep2++){
+    for(var j=0;j<MELODY_RIFF.length;j++){
+      playTone(MELODY_RIFF[j][0],mt,MELODY_RIFF[j][1],0.07,'triangle');
+      mt+=MELODY_RIFF[j][1];
+    }
+  }
+
+  // Contrepoint (une fois)
+  var ct=now+Q;
+  for(var k=0;k<COUNTER.length;k++){
+    playTone(COUNTER[k][0],ct,COUNTER[k][1],0.04,'sine',-5);
+    ct+=COUNTER[k][1];
+  }
+
+  // Percussion sur la durée du loop
+  var pt=now;
+  var beat=0;
+  while(pt<now+loopLen-Q){
+    playKick(pt);
+    if(beat%2===1) playSnare(pt+S*0.5);
+    pt+=Q;
+    beat++;
+  }
+
+  // Programmer la prochaine boucle
+  loopTimeout=setTimeout(function(){
+    if(musicPlaying) scheduleLoop();
+  },(loopLen-0.4)*1000);
+}
+
+function startMusic(){
+  if(!initAudio()) return;
+  if(audioCtx.state==='suspended') audioCtx.resume();
+  musicPlaying=true;
+  scheduleLoop();
+  var btn=document.getElementById('musicBtn');
+  btn.textContent='🎃';
+  btn.classList.remove('muted');
+}
+
+function stopMusic(){
+  musicPlaying=false;
+  if(loopTimeout){clearTimeout(loopTimeout);loopTimeout=null;}
+  musicNodes.forEach(function(n){try{n.stop();}catch(e){}});
+  musicNodes=[];
+  var btn=document.getElementById('musicBtn');
+  btn.textContent='🔇';
+  btn.classList.add('muted');
+}
+
+function toggleMusic(){
+  if(musicPlaying) stopMusic(); else startMusic();
+}
+
+// Démarrer au premier clic
+document.addEventListener('click',function startOnce(){
+  if(!musicPlaying&&!document.getElementById('musicBtn').classList.contains('muted')){
+    startMusic();
+  }
+},{once:true});
+</script>
+</body>
