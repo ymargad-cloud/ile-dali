@@ -476,7 +476,7 @@ function genericExosetsForLevel(levelKey){
 }
 
 var CURRENT_PROFILE=null;
-var ST={pts:0,streak:0,quizIdx:0,quizScore:0,exStep:0,exCorrect:0,exQs:[],exSet:'',ptab:'sessions',plvl:'CE2',sName:'',sResults:[]};
+var ST={pts:0,streak:0,quizIdx:0,quizScore:0,exStep:0,exCorrect:0,exQs:[],exSet:'',ptab:'sessions',plvl:'CE2',sName:'',sResults:[],sessionMode:'revision',trimestre:1,targetLevel:null};
 var SCREENS=["profiles","login","diag","quiz","results","dash","exercise","rewards","island","badges","parent"];
 var NLABELS={"profiles":"0.Profils","login":"1.Connexion","diag":"2.Diagnostic","quiz":"3.Quiz","results":"4.Résultats","dash":"5.Mon île","exercise":"6.Exercice","rewards":"7.Boutique","island":"8.Carte","badges":"9.Badges","parent":"10.Parents"};
 
@@ -812,6 +812,25 @@ var PROG_2NDE=[
     {name:"Histoire-Geo",items:["Geographie: les dynamiques de la mondialisation"]}
   ]}
 ];
+
+function getProgForLevelKey(levelKey){
+  if(!levelKey) return null;
+  var map={
+    CP:{data:PROG_CP,src:'BO 2024 — Cycle 2',label:'CP'},
+    CE1:{data:PROG_CE1,src:'BO 2024 — Cycle 2',label:'CE1'},
+    CE2:{data:PROG.CE2,src:'BO oct. 2024 — Cycle 2',label:'CE2'},
+    CM1:{data:PROG.CM1,src:'BO avr. 2025 — Cycle 3',label:'CM1'},
+    CM2:{data:PROG_CM2,src:'BO avr. 2025 — Cycle 3',label:'CM2'},
+    SIXIEME:{data:PROG_6E,src:'BO 2024 — Cycle 3',label:'6e'},
+    CINQUIEME:{data:PROG_5E,src:'BO 2018 — Cycle 4',label:'5e'},
+    QUATRIEME:{data:PROG_4E,src:'BO 2018/2024 — Cycle 4',label:'4e'},
+    TROISIEME:{data:PROG_3E,src:'BO 2018/2024 — Cycle 4',label:'3e'},
+    SECONDE:{data:PROG_2NDE,src:'BO 2019 — Lycee',label:'Seconde'},
+    PREMIERE:{data:PROG_1ERE,src:'BO 2019 — Lycee',label:'Premiere'},
+    TERMINALE:{data:PROG_TERMINALE,src:'BO 2019/2023 — Lycee',label:'Terminale'}
+  };
+  return map[levelKey]||null;
+}
 
 function getProgForProfile(){
   var levelKey=CURRENT_PROFILE?CURRENT_PROFILE.level:'CE2';
@@ -1507,8 +1526,72 @@ function renderLogin2(){
   var view=document.getElementById('v-login');
   if(!CURRENT_PROFILE) return;
   var lvl=LEVELS[CURRENT_PROFILE.level];
-  view.innerHTML='<div class="hz">'+zappySVG('excited')+'</div><div class="ltitle">L\'Ile d\'Ali!</div><div class="lsub">Ton compagnon d\'aventure scolaire ⚡</div><div class="pcard"><div class="pav" style="font-size:40px;display:flex;align-items:center;justify-content:center;">'+(CURRENT_PROFILE.emoji||'🧒')+'</div><div class="pname">'+CURRENT_PROFILE.name+'</div><div class="pmeta">'+lvl.label+' · '+lvl.cycle+'</div><div style="margin-bottom:10px;"><input class="inp" id="sni" placeholder="Nom session (ex: Mercredi 25 juin)" maxlength="40"/></div><button class="btn btn-green btn-block" onclick="startSess()">🚀 Nouvelle session</button><div style="height:10px"></div><button class="btn btn-outline btn-block" style="color:var(--purple);font-size:15px;" onclick="openSess()">📋 Voir les sessions</button><div style="height:10px"></div><button class="btn btn-outline btn-block" style="color:var(--ink-soft);font-size:14px;" onclick="goTo(\'profiles\')">↩ Changer de profil</button></div>';
+  var levelKeys=Object.keys(LEVELS);
+  var targetOpts=levelKeys.filter(function(k){return k!==CURRENT_PROFILE.level;}).map(function(k){return '<option value="'+k+'">'+LEVELS[k].label+'</option>';}).join('');
+  view.innerHTML=''
+    +'<div class="hz">'+zappySVG('excited')+'</div>'
+    +'<div class="ltitle" style="font-size:28px;">L\'Ile aux Eleves!</div>'
+    +'<div class="lsub">Ton compagnon scolaire ⚡</div>'
+    +'<div class="pcard">'
+    +'<div class="pav" style="font-size:40px;display:flex;align-items:center;justify-content:center;">'+(CURRENT_PROFILE.emoji||'🧒')+'</div>'
+    +'<div class="pname">'+CURRENT_PROFILE.name+'</div>'
+    +'<div class="pmeta">'+lvl.label+' · '+lvl.cycle+'</div>'
+    +'<input class="inp" id="sni" placeholder="Nom de la session" maxlength="40" style="margin-bottom:12px;"/>'
+    +'<div style="font-family:var(--fd);font-size:14px;color:var(--ink);margin-bottom:8px;">🎯 Mode de travail</div>'
+    +'<div style="display:flex;gap:8px;margin-bottom:12px;">'
+    +'<button id="modeRevBtn" onclick="setSessionMode(\'revision\')" style="flex:1;font-family:var(--fd);font-size:14px;padding:10px;border-radius:999px;border:none;cursor:pointer;background:linear-gradient(180deg,var(--teal-l),var(--teal));color:#fff;box-shadow:0 4px 0 var(--teal-d);">📚 Révision</button>'
+    +'<button id="modePassBtn" onclick="setSessionMode(\'passeport\')" style="flex:1;font-family:var(--fd);font-size:14px;padding:10px;border-radius:999px;border:3px solid var(--purple);cursor:pointer;background:#fff;color:var(--purple);">🎒 Passeport</button>'
+    +'</div>'
+    +'<div id="modeRevOpts">'
+    +'<div style="font-family:var(--fd);font-size:13px;color:var(--ink-soft);margin-bottom:6px;">Trimestre à réviser</div>'
+    +'<div style="display:flex;gap:6px;margin-bottom:12px;">'
+    +'<button id="tri1btn" onclick="setTrimestre(1)" style="flex:1;font-family:var(--fd);font-size:14px;padding:9px;border-radius:12px;border:none;cursor:pointer;background:linear-gradient(180deg,var(--gold-l),var(--gold));color:#7a5000;box-shadow:0 3px 0 var(--gold-d);">T1</button>'
+    +'<button id="tri2btn" onclick="setTrimestre(2)" style="flex:1;font-family:var(--fd);font-size:14px;padding:9px;border-radius:12px;border:3px solid #e0e0e0;cursor:pointer;background:#fff;color:var(--ink);">T2</button>'
+    +'<button id="tri3btn" onclick="setTrimestre(3)" style="flex:1;font-family:var(--fd);font-size:14px;padding:9px;border-radius:12px;border:3px solid #e0e0e0;cursor:pointer;background:#fff;color:var(--ink);">T3</button>'
+    +'</div></div>'
+    +'<div id="modePassOpts" style="display:none;">'
+    +'<div style="font-family:var(--fd);font-size:13px;color:var(--ink-soft);margin-bottom:6px;">Je passe en :</div>'
+    +'<select id="targetLvlSel" onchange="ST.targetLevel=this.value" style="width:100%;font-family:var(--fa);font-weight:700;font-size:14px;border:3px solid #e0d0ff;border-radius:14px;padding:10px;background:#fff;margin-bottom:12px;">'+targetOpts+'</select>'
+    +'<div style="background:linear-gradient(135deg,#fff8cc,#ffeea0);border:2px solid var(--gold-d);border-radius:12px;padding:10px;font-family:var(--fa);font-weight:600;font-size:12.5px;color:#7a5000;margin-bottom:10px;">🎒 Le passeport prépare le passage entre ton niveau actuel et le suivant, idéal pendant les vacances !</div>'
+    +'</div>'
+    +'<button class="btn btn-green btn-block" style="margin-bottom:8px;" onclick="startSess()">🚀 Commencer</button>'
+    +'<button class="btn btn-outline btn-block" style="color:var(--purple);font-size:14px;margin-bottom:8px;" onclick="openSess()">📋 Historique sessions</button>'
+    +'<button class="btn btn-outline btn-block" style="color:var(--ink-soft);font-size:13px;" onclick="goTo(\'profiles\')">↩ Changer de profil</button>'
+    +'</div>';
+  ST.targetLevel=levelKeys.filter(function(k){return k!==CURRENT_PROFILE.level;})[0]||null;
 }
+
+function setSessionMode(mode){
+  ST.sessionMode=mode;
+  var isRev=mode==='revision';
+  var rOpts=document.getElementById('modeRevOpts');
+  var pOpts=document.getElementById('modePassOpts');
+  var rBtn=document.getElementById('modeRevBtn');
+  var pBtn=document.getElementById('modePassBtn');
+  if(rOpts) rOpts.style.display=isRev?'block':'none';
+  if(pOpts) pOpts.style.display=isRev?'none':'block';
+  if(rBtn) rBtn.style.background=isRev?'linear-gradient(180deg,var(--teal-l),var(--teal))':'#fff';
+  if(rBtn) rBtn.style.color=isRev?'#fff':'var(--teal)';
+  if(rBtn) rBtn.style.border=isRev?'none':'3px solid var(--teal)';
+  if(pBtn) pBtn.style.background=isRev?'#fff':'linear-gradient(180deg,var(--purple-l),var(--purple))';
+  if(pBtn) pBtn.style.color=isRev?'var(--purple)':'#fff';
+  if(pBtn) pBtn.style.border=isRev?'3px solid var(--purple)':'none';
+}
+
+function setTrimestre(t){
+  ST.trimestre=t;
+  var btns=[1,2,3];
+  btns.forEach(function(n){
+    var b=document.getElementById('tri'+n+'btn');
+    if(!b) return;
+    var active=(n===t);
+    b.style.background=active?'linear-gradient(180deg,var(--gold-l),var(--gold))':'#fff';
+    b.style.color=active?'#7a5000':'var(--ink)';
+    b.style.border=active?'none':'3px solid #e0e0e0';
+    b.style.boxShadow=active?'0 3px 0 var(--gold-d)':'none';
+  });
+}
+
 
 function openProg(){ST.ptab='programme';goTo('parent');}
 
@@ -1525,8 +1608,23 @@ function renderLogin(){
 }
 
 function renderDiag(){
-  return '<div class="view" id="v-diag">'+sb()+bubble('Salut Ali ! Je suis <b>Zappy</b> ⚡<br>On va faire un quiz pour voir ce que tu sais. Pas de stress !','excited')+'<div class="card card-gold"><div style="font-family:var(--fd);font-size:17px;margin-bottom:10px;">📋 Ce qu\'on va explorer :</div><div style="display:flex;flex-wrap:wrap;gap:8px;">'+['📖 Lecture','✏️ Accords GN','🔤 Sujet-Verbe','➖ Soustraction','✖️ Tables'].map(function(p){return '<span style="background:#fff;border:2px solid var(--gold-d);border-radius:999px;padding:6px 12px;font-family:var(--fd);font-size:13px;color:#7a5000;box-shadow:0 3px 0 var(--gold-d);">'+p+'</span>';}).join('')+'</div><p style="font-size:13px;text-align:center;margin-top:12px;font-family:var(--fa);font-weight:600;color:var(--ink-soft);">Environ 5 minutes · Pas de note !</p></div><div style="margin-top:20px;"><button class="btn btn-green btn-block" onclick="goTo(\'quiz\')">C\'est parti ! ⚡</button></div></div>';
+  var modeLabel='';
+  var modeTag='';
+  if(ST.sessionMode==='revision'){
+    modeLabel='Révision Trimestre '+ST.trimestre;
+    var _lvlD=CURRENT_PROFILE?LEVELS[CURRENT_PROFILE.level]:null;modeTag='📚 T'+ST.trimestre+' — '+(_lvlD?_lvlD.label:'?');
+  } else {
+    var tgt=ST.targetLevel?LEVELS[ST.targetLevel]:null;
+    modeLabel='Passeport '+(_lvlD?_lvlD.label:'?')+' → '+(tgt?tgt.label:'?');
+    modeTag='🎒 Passage '+(_lvlD?_lvlD.label:'?')+' → '+(tgt?tgt.label:'?');
+  }
+  return '<div class="view" id="v-diag">'+sb()
+    +'<div style="margin:8px 0 4px;"><span style="display:inline-block;background:linear-gradient(135deg,var(--teal-l),var(--teal));color:#fff;font-family:var(--fd);font-size:12px;padding:5px 12px;border-radius:999px;box-shadow:0 3px 0 var(--teal-d);">'+modeTag+'</span></div>'
+    +bubble('Bonjour <b>'+(CURRENT_PROFILE?CURRENT_PROFILE.name:'toi')+'</b> ! Je suis <b>Zappy</b> ⚡<br>On commence par un diagnostic adapte a ton mode. Pret ?','excited')
+    +'<div class="card card-gold"><div style="font-family:var(--fd);font-size:16px;margin-bottom:8px;">🎯 '+modeLabel+'</div><p style="font-size:13px;font-family:var(--fa);font-weight:600;color:var(--ink-soft);">Environ 5 minutes · Pas de note !</p></div>'
+    +'<div style="margin-top:20px;"><button class="btn btn-green btn-block" onclick="goTo(\'quiz\')">C\'est parti ! ⚡</button></div></div>';
 }
+
 
 function renderQuiz(){
   var view=document.getElementById('v-quiz');
@@ -1561,7 +1659,11 @@ function renderDash(){
   var lvlLabel=lvl?lvl.label:'CE2';
   var weaknesses=CURRENT_PROFILE?getWeaknessSummary(CURRENT_PROFILE.id):[];
   var focusText=weaknesses.length>0?weaknesses[0]:'tes priorites';var islandStats=getIslandStatsForProfile();
-  view.innerHTML=sb()+(ST.sName?'<div style="margin:6px 0;"><span style="display:inline-block;background:linear-gradient(135deg,var(--purple-l),var(--purple));color:#fff;font-family:var(--fd);font-size:12px;padding:5px 12px;border-radius:999px;box-shadow:0 3px 0 var(--purple-d);">📂 '+ST.sName+'</span></div>':'')+'<div class="dh">Salut '+profName+' ! '+profEmoji+'</div>'+bubble('Aujourd\'hui on travaille '+focusText+' ! Pret ?','happy')+'<div class="icard" onclick="goTo(\'island\')"><div class="ilbl">🏝️ '+lvlLabel+' — Niveau '+islandStats.level+'</div><span class="ideco" style="top:20px;right:22px;font-size:36px;">🌴</span><span class="ideco" style="top:55px;right:72px;font-size:24px;">⚡</span><span class="ideco" style="top:30px;left:80px;font-size:28px;">🏰</span><div class="istats"><div class="istat">🏠 '+islandStats.buildings+' batiments</div><div class=\"istat\">🐾 '+islandStats.creatures+' creatures</div></div></div><div class="mt">📋 Missions du jour</div><div class="mc done"><div class="mi">📖</div><div class="mb"><div class="mn">Mission 1 — Diagnostic</div><div class="md">Fait avec Zappy</div></div><div class="mchk">✓</div></div><div class="mc" onclick="goTo(\'exercise\')"><div class="mi m2">🎯</div><div class="mb"><div class="mn">Mission 2 — Exercice</div><div class="md">Choisis ta matiere · 5 min max</div></div><div class="mpts">+10 ⚡</div></div><div class="mc locked"><div class="mi m3">🏆</div><div class="mb"><div class="mn">Mission 3 — Defi bonus</div><div class="md">Debloque apres la mission 2</div></div><div class="mpts">+20 ⚡</div></div><div style="display:flex;gap:10px;margin-top:16px;"><button class="btn btn-outline" style="flex:1;font-size:14px;color:var(--purple);padding:12px;" onclick="goTo(\'rewards\')">🛍️ Boutique</button><button class="btn btn-outline" style="flex:1;font-size:14px;color:var(--teal);padding:12px;" onclick="goTo(\'badges\')">🏅 Badges</button></div><div style="margin-top:10px;display:flex;gap:10px;"><button class="btn btn-gold" style="flex:1;font-size:15px;padding:12px;" onclick="openProg()">📘 Programme</button><button class="btn btn-purple" style="flex:1;font-size:15px;padding:12px;" onclick="saveAndEnd()">💾 Fin</button></div>';
+  view.innerHTML=sb()+(ST.sName?'<div style="margin:6px 0;display:flex;gap:6px;flex-wrap:wrap;">'
+    +'<span style="display:inline-block;background:linear-gradient(135deg,var(--purple-l),var(--purple));color:#fff;font-family:var(--fd);font-size:12px;padding:5px 12px;border-radius:999px;box-shadow:0 3px 0 var(--purple-d);">📂 '+ST.sName+'</span>'
+    +(ST.sessionMode==='revision'?'<span style="display:inline-block;background:linear-gradient(135deg,var(--teal-l),var(--teal));color:#fff;font-family:var(--fd);font-size:12px;padding:5px 12px;border-radius:999px;box-shadow:0 3px 0 var(--teal-d);">📚 Révision T'+ST.trimestre+'</span>':'')
+    +(ST.sessionMode==='passeport'&&ST.targetLevel?'<span style="display:inline-block;background:linear-gradient(180deg,var(--gold-l),var(--gold));color:#7a5000;font-family:var(--fd);font-size:12px;padding:5px 12px;border-radius:999px;box-shadow:0 3px 0 var(--gold-d);">🎒 Passeport → '+(ST.targetLevel&&LEVELS[ST.targetLevel]?LEVELS[ST.targetLevel].label:'?')+'</span>':'')
+    +'</div>':'')+'<div class="dh">Salut '+profName+' ! '+profEmoji+'</div>'+bubble('Aujourd\'hui on travaille '+focusText+' ! Pret ?','happy')+'<div class="icard" onclick="goTo(\'island\')"><div class="ilbl">🏝️ '+lvlLabel+' — Niveau '+islandStats.level+'</div><span class="ideco" style="top:20px;right:22px;font-size:36px;">🌴</span><span class="ideco" style="top:55px;right:72px;font-size:24px;">⚡</span><span class="ideco" style="top:30px;left:80px;font-size:28px;">🏰</span><div class="istats"><div class="istat">🏠 '+islandStats.buildings+' batiments</div><div class=\"istat\">🐾 '+islandStats.creatures+' creatures</div></div></div><div class="mt">📋 Missions du jour</div><div class="mc done"><div class="mi">📖</div><div class="mb"><div class="mn">Mission 1 — Diagnostic</div><div class="md">Fait avec Zappy</div></div><div class="mchk">✓</div></div><div class="mc" onclick="goTo(\'exercise\')"><div class="mi m2">🎯</div><div class="mb"><div class="mn">Mission 2 — Exercice</div><div class="md">Choisis ta matiere · 5 min max</div></div><div class="mpts">+10 ⚡</div></div><div class="mc locked"><div class="mi m3">🏆</div><div class="mb"><div class="mn">Mission 3 — Defi bonus</div><div class="md">Debloque apres la mission 2</div></div><div class="mpts">+20 ⚡</div></div><div style="display:flex;gap:10px;margin-top:16px;"><button class="btn btn-outline" style="flex:1;font-size:14px;color:var(--purple);padding:12px;" onclick="goTo(\'rewards\')">🛍️ Boutique</button><button class="btn btn-outline" style="flex:1;font-size:14px;color:var(--teal);padding:12px;" onclick="goTo(\'badges\')">🏅 Badges</button></div><div style="margin-top:10px;display:flex;gap:10px;"><button class="btn btn-gold" style="flex:1;font-size:15px;padding:12px;" onclick="openProg()">📘 Programme</button><button class="btn btn-purple" style="flex:1;font-size:15px;padding:12px;" onclick="saveAndEnd()">💾 Fin</button></div>';
 }
 
 function renderExMenu(){
@@ -1613,7 +1715,15 @@ function generateAI(setKey,levelKey,cb){
   var formatExample=isLecture
     ? '[{"texte":"un court texte adapte au niveau","q":"une question sur le texte","opts":["A","B","C","D"],"correct":0}]'
     : '[{"q":"la question ou exercice","opts":["A","B","C","D"],"correct":0}]';
-  var prompt='Genere '+n+' exercices de '+subjLabel+' niveau '+levelLabel+' (systeme scolaire francais/AEFE). Reponds UNIQUEMENT avec un tableau JSON valide, sans texte ni backticks. Format exact : '+formatExample+'. Les 4 options doivent etre plausibles, correct est l index 0-3 de la bonne reponse.';
+  var modeCtx='';
+  if(ST.sessionMode==='revision'){
+    modeCtx=' Trimestre '+ST.trimestre+' de l annee scolaire.';
+  } else if(ST.sessionMode==='passeport' && ST.targetLevel){
+    var tgtLvl=ST.targetLevel?LEVELS[ST.targetLevel]:null;
+    var tgtLabel=tgtLvl?tgtLvl.label:levelLabel;
+    modeCtx=' Melange equitable de contenu de fin de '+levelLabel+' et de debut de '+tgtLabel+' pour preparer le passage entre les deux niveaux.';
+  }
+  var prompt='Genere '+n+' exercices de '+subjLabel+' niveau '+levelLabel+' (systeme scolaire francais/AEFE).'+modeCtx+' Reponds UNIQUEMENT avec un tableau JSON valide, sans texte ni backticks. Format exact : '+formatExample+'. Les 4 options doivent etre plausibles, correct est l index 0-3 de la bonne reponse.';
   fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
@@ -1709,7 +1819,7 @@ function renderPTab(){
   else if(ST.ptab==='rewards') el.innerHTML=pRewards();
 }
 
-function pSessions(){var sess=getSess();var cur='';if(ST.sResults&&ST.sResults.length>0){cur='<div class="pc2" style="border:2px solid #d9a000;"><h3>📂 Session en cours: '+ST.sName+'</h3>'+ST.sResults.map(function(r){var col=r.score>=80?'#a5d6a7':r.score>=50?'#ffe984':'#ffb3b3';return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);font-family:var(--fa);font-weight:600;font-size:13px;color:#d8c8ff;"><span>'+r.type+'</span><span style="font-family:var(--fd);font-size:16px;color:'+col+';">'+r.correct+'/'+r.total+' ('+r.score+'%)</span></div>';}).join('')+'<div style="margin-top:12px;"><button class="btn btn-coral" style="width:100%;font-size:15px;" onclick="saveAndEnd()">💾 Terminer et enregistrer</button></div></div>';}if(!sess.length&&(!ST.sResults||!ST.sResults.length)){return cur+'<div class="pc2"><h3>📋 Historique</h3><p style="color:#c9a8ff;font-size:13px;font-family:var(--fa);font-weight:600;">Aucune session. Commence depuis connexion!</p></div>';}var hist=sess.map(function(s){var r=s.results&&s.results.length?s.results.map(function(r){var col=r.score>=80?'#a5d6a7':r.score>=50?'#ffe984':'#ffb3b3';return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);font-family:var(--fa);font-weight:600;font-size:12px;color:#d8c8ff;"><span>'+r.type+'</span><span style="font-family:var(--fd);color:'+col+';">'+r.correct+'/'+r.total+' ('+r.score+'%)</span></div>';}).join(''):'<p style="color:#c9a8ff;font-size:12px;font-family:var(--fa);">Aucun exercice</p>';return '<div style="background:rgba(255,255,255,.08);border-radius:16px;padding:14px;margin-bottom:10px;cursor:pointer;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display===\'block\'?\'none\':\'block\'"><div style="font-family:var(--fd);font-size:15px;color:#fff;">📂 '+s.name+'</div><div style="font-size:12px;color:#c9a8ff;font-family:var(--fa);font-weight:600;">'+fmtD(s.date)+' · '+s.pts+' pts · '+(s.results?s.results.length:0)+' exercice(s)</div></div><div style="display:none;background:rgba(255,255,255,.05);padding:12px;margin-bottom:10px;">'+r+'</div>';}).join('');return cur+'<div class="pc2"><h3>📋 Historique ('+sess.length+')</h3>'+hist+'</div>';}
+function pSessions(){var sess=getSess();var cur='';if(ST.sResults&&ST.sResults.length>0){cur='<div class="pc2" style="border:2px solid #d9a000;"><h3>📂 Session en cours: '+ST.sName+'</h3>'+ST.sResults.map(function(r){var col=r.score>=80?'#a5d6a7':r.score>=50?'#ffe984':'#ffb3b3';return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);font-family:var(--fa);font-weight:600;font-size:13px;color:#d8c8ff;"><span>'+r.type+'</span><span style="font-family:var(--fd);font-size:16px;color:'+col+';">'+r.correct+'/'+r.total+' ('+r.score+'%)</span></div>';}).join('')+'<div style="margin-top:12px;"><button class="btn btn-coral" style="width:100%;font-size:15px;" onclick="saveAndEnd()">💾 Terminer et enregistrer</button></div></div>';}if(!sess.length&&(!ST.sResults||!ST.sResults.length)){return cur+'<div class="pc2"><h3>📋 Historique</h3><p style="color:#c9a8ff;font-size:13px;font-family:var(--fa);font-weight:600;">Aucune session. Commence depuis connexion!</p></div>';}var hist=sess.map(function(s){var r=s.results&&s.results.length?s.results.map(function(r){var col=r.score>=80?'#a5d6a7':r.score>=50?'#ffe984':'#ffb3b3';return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);font-family:var(--fa);font-weight:600;font-size:12px;color:#d8c8ff;"><span>'+r.type+'</span><span style="font-family:var(--fd);color:'+col+';">'+r.correct+'/'+r.total+' ('+r.score+'%)</span></div>';}).join(''):'<p style="color:#c9a8ff;font-size:12px;font-family:var(--fa);">Aucun exercice</p>';return '<div style="background:rgba(255,255,255,.08);border-radius:16px;padding:14px;margin-bottom:10px;cursor:pointer;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display===\'block\'?\'none\':\'block\'"><div style="font-family:var(--fd);font-size:15px;color:#fff;">📂 '+s.name+'</div><div style="font-size:12px;color:#c9a8ff;font-family:var(--fa);font-weight:600;">'+fmtD(s.date)+' · '+(s.mode==='passeport'&&s.targetLevel?'🎒 Passeport → '+LEVELS[s.targetLevel].label:'📚 Révision T'+(s.trimestre||1))+' · '+s.pts+' pts · '+(s.results?s.results.length:0)+' exercice(s)</div></div><div style="display:none;background:rgba(255,255,255,.05);padding:12px;margin-bottom:10px;">'+r+'</div>';}).join('');return cur+'<div class="pc2"><h3>📋 Historique ('+sess.length+')</h3>'+hist+'</div>';}
 function pStats(){
   var bars=getStatsForProfile();
   var weaknesses=CURRENT_PROFILE?getWeaknessSummary(CURRENT_PROFILE.id):[];
@@ -1731,16 +1841,38 @@ function pBilan(){
 }
 
 function pProg(){
+  var isPasseport=ST.sessionMode==='passeport' && ST.targetLevel && CURRENT_PROFILE;
+  if(isPasseport){
+    var src1=getProgForProfile();
+    var tgt=ST.targetLevel;
+    var src2=getProgForLevelKey(tgt);
+    var html='<div class="pc2" style="border:2px solid var(--teal-d);"><h3>🎒 Passeport '+LEVELS[oldProfLevel].label+' → '+LEVELS[tgt].label+'</h3><p style="color:#c9a8ff;font-size:12px;margin-bottom:10px;font-family:var(--fa);font-weight:600;">Programme de transition — matriser la fin du niveau actuel et preparer le suivant.</p>';
+    if(src1){
+      var lastTri=src1.data[src1.data.length-1];
+      html+='<div class="ptri">📅 A consolider ('+src1.label+' — Trimestre 3)</div>'+lastTri.subjs.map(function(s){return '<div class="psubj"><div class="psubjn">'+s.name+'</div><div class="ptags">'+s.items.map(function(i){return '<span class="ptag">'+i+'</span>';}).join('')+'</div></div>';}).join('');
+    }
+    if(src2){
+      var firstTri=src2.data[0];
+      html+='<div class="ptri">📅 A preparer ('+src2.label+' — Trimestre 1)</div>'+firstTri.subjs.map(function(s){return '<div class="psubj"><div class="psubjn">'+s.name+'</div><div class="ptags">'+s.items.map(function(i){return '<span class="ptag">'+i+'</span>';}).join('')+'</div></div>';}).join('');
+    }
+    html+='</div>';
+    return html;
+  }
   var resolved=getProgForProfile();
   if(!resolved){
     var profLevel=CURRENT_PROFILE?LEVELS[CURRENT_PROFILE.level]:null;
     var lvlLabel=profLevel?profLevel.label:'ce niveau';
-    return '<div class="pc2" style="background:rgba(249,198,33,.1);border-color:rgba(249,198,33,.3);"><h3>ℹ️ Programme '+lvlLabel+'</h3><p style="color:#ffe9a8;font-size:13px;font-family:var(--fa);font-weight:600;">Le detail du programme officiel pour ce niveau est en cours d ajout. Les exercices restent generes par IA selon le programme francais/AEFE de '+lvlLabel+'.</p></div>';
+    return '<div class="pc2" style="background:rgba(249,198,33,.1);border-color:rgba(249,198,33,.3);"><h3>ℹ️ Programme '+lvlLabel+'</h3><p style="color:#ffe9a8;font-size:13px;font-family:var(--fa);font-weight:600;">Le detail du programme officiel pour ce niveau est en cours d ajout.</p></div>';
   }
   var data=resolved.data;
   var src=resolved.src;
   var lvlLabel=resolved.label;
-  return '<div class="pc2"><h3>📘 Programme officiel '+lvlLabel+'</h3><p style="color:#c9a8ff;font-size:12px;margin-bottom:12px;font-family:var(--fa);font-weight:600;">Source : '+src+' · Applicable rentree 2025 · Identique dans tous les etablissements AEFE homologues</p>'+data.map(function(tri){return '<div class="ptri">📅 '+tri.tri+'</div>'+tri.subjs.map(function(s){return '<div class="psubj"><div class="psubjn">'+s.name+'</div><div class="ptags">'+s.items.map(function(i){return '<span class="ptag">'+i+'</span>';}).join('')+'</div></div>';}).join('');}).join('')+'</div>';
+  var filteredData=data;
+  if(ST.sessionMode==='revision'){
+    filteredData=[data[ST.trimestre-1]].filter(Boolean);
+  }
+  var triHeader=ST.sessionMode==='revision'?' — Trimestre '+ST.trimestre+' uniquement':'';
+  return '<div class="pc2"><h3>📘 Programme '+lvlLabel+triHeader+'</h3><p style="color:#c9a8ff;font-size:12px;margin-bottom:12px;font-family:var(--fa);font-weight:600;">Source : '+src+'</p>'+filteredData.map(function(tri){return '<div class="ptri">📅 '+tri.tri+'</div>'+tri.subjs.map(function(s){return '<div class="psubj"><div class="psubjn">'+s.name+'</div><div class="ptags">'+s.items.map(function(i){return '<span class="ptag">'+i+'</span>';}).join('')+'</div></div>';}).join('');}).join('')+'</div>';
 }
 
 function setPlvl(l){ST.plvl=l;renderPTab();}
@@ -1763,12 +1895,23 @@ function confetti(){
 
 
 function saveAndEnd(){var sess={name:ST.sName,date:Date.now(),pts:ST.pts,results:ST.sResults.slice()};saveSess(sess);confetti();var v=document.getElementById('v-dash');v.innerHTML=sb()+'<div class="cwrap"><div style="font-size:60px;margin-bottom:10px;">💾</div><h2 style="font-family:var(--fd);font-size:24px;">Session enregistree!</h2><p style="font-family:var(--fa);font-weight:700;margin:10px auto;max-width:280px;color:var(--ink-soft);">'+ST.sName+' — '+ST.pts+' PokePoints</p><div style="margin-top:20px;display:flex;flex-direction:column;gap:10px;"><button class="btn btn-purple btn-block" onclick="openSess()">📋 Voir les sessions</button><button class="btn btn-gold btn-block" onclick="goTo('+"'"+'login'+"'"+')">🚀 Nouvelle session</button></div></div>';}
-function startSess(){var n=document.getElementById('sni');if(!n||!n.value.trim()){alert('Donne un nom!');return;}ST.sName=n.value.trim();ST.pts=0;ST.streak=0;ST.sResults=[];goTo('diag');}
+function startSess(){
+  var n=document.getElementById('sni');
+  if(!n||!n.value.trim()){alert('Donne un nom a la session!');return;}
+  ST.sName=n.value.trim();
+  ST.pts=0;ST.streak=0;ST.sResults=[];
+  if(ST.sessionMode==='passeport'){
+    var sel=document.getElementById('targetLvlSel');
+    ST.targetLevel=sel?sel.value:null;
+    if(!ST.targetLevel){alert('Choisis le niveau cible!');return;}
+  }
+  goTo('diag');
+}
 function getSess(){if(!CURRENT_PROFILE)return[];return getSessionsFor(CURRENT_PROFILE.id);}
 function saveSess(s){if(!CURRENT_PROFILE)return;saveSessionFor(CURRENT_PROFILE.id,s);}
 function fmtD(ts){var d=new Date(ts);return d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear()+' '+d.getHours()+'h'+String(d.getMinutes()).padStart(2,'0');}
 function scC(p){return p>=80?'#a5d6a7':p>=50?'#ffe984':'#ffb3b3';}
-function saveAndEnd(){var s={name:ST.sName,date:Date.now(),pts:ST.pts,results:ST.sResults.slice()};saveSess(s);confetti();renderDash();}
+function saveAndEnd(){var s={name:ST.sName,date:Date.now(),pts:ST.pts,results:ST.sResults.slice(),mode:ST.sessionMode,trimestre:ST.trimestre,targetLevel:ST.targetLevel};saveSess(s);confetti();renderDash();}
 function openSess(){ST.ptab='sessions';goTo('parent');}
 
 // ═══════════════════════════════════════════════
@@ -2172,7 +2315,15 @@ function generateAI(setKey,levelKey,cb){
   var formatExample=isLecture
     ? '[{"texte":"un court texte adapte au niveau","q":"une question sur le texte","opts":["A","B","C","D"],"correct":0}]'
     : '[{"q":"la question ou exercice","opts":["A","B","C","D"],"correct":0}]';
-  var prompt='Genere '+n+' exercices de '+subjLabel+' niveau '+levelLabel+' (systeme scolaire francais/AEFE). Reponds UNIQUEMENT avec un tableau JSON valide, sans texte ni backticks. Format exact : '+formatExample+'. Les 4 options doivent etre plausibles, correct est l index 0-3 de la bonne reponse.';
+  var modeCtx='';
+  if(ST.sessionMode==='revision'){
+    modeCtx=' Trimestre '+ST.trimestre+' de l annee scolaire.';
+  } else if(ST.sessionMode==='passeport' && ST.targetLevel){
+    var tgtLvl=ST.targetLevel?LEVELS[ST.targetLevel]:null;
+    var tgtLabel=tgtLvl?tgtLvl.label:levelLabel;
+    modeCtx=' Melange equitable de contenu de fin de '+levelLabel+' et de debut de '+tgtLabel+' pour preparer le passage entre les deux niveaux.';
+  }
+  var prompt='Genere '+n+' exercices de '+subjLabel+' niveau '+levelLabel+' (systeme scolaire francais/AEFE).'+modeCtx+' Reponds UNIQUEMENT avec un tableau JSON valide, sans texte ni backticks. Format exact : '+formatExample+'. Les 4 options doivent etre plausibles, correct est l index 0-3 de la bonne reponse.';
   fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
@@ -2268,7 +2419,7 @@ function renderPTab(){
   else if(ST.ptab==='rewards') el.innerHTML=pRewards();
 }
 
-function pSessions(){var sess=getSess();var cur='';if(ST.sResults&&ST.sResults.length>0){cur='<div class="pc2" style="border:2px solid #d9a000;"><h3>📂 Session en cours: '+ST.sName+'</h3>'+ST.sResults.map(function(r){var col=r.score>=80?'#a5d6a7':r.score>=50?'#ffe984':'#ffb3b3';return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);font-family:var(--fa);font-weight:600;font-size:13px;color:#d8c8ff;"><span>'+r.type+'</span><span style="font-family:var(--fd);font-size:16px;color:'+col+';">'+r.correct+'/'+r.total+' ('+r.score+'%)</span></div>';}).join('')+'<div style="margin-top:12px;"><button class="btn btn-coral" style="width:100%;font-size:15px;" onclick="saveAndEnd()">💾 Terminer et enregistrer</button></div></div>';}if(!sess.length&&(!ST.sResults||!ST.sResults.length)){return cur+'<div class="pc2"><h3>📋 Historique</h3><p style="color:#c9a8ff;font-size:13px;font-family:var(--fa);font-weight:600;">Aucune session. Commence depuis connexion!</p></div>';}var hist=sess.map(function(s){var r=s.results&&s.results.length?s.results.map(function(r){var col=r.score>=80?'#a5d6a7':r.score>=50?'#ffe984':'#ffb3b3';return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);font-family:var(--fa);font-weight:600;font-size:12px;color:#d8c8ff;"><span>'+r.type+'</span><span style="font-family:var(--fd);color:'+col+';">'+r.correct+'/'+r.total+' ('+r.score+'%)</span></div>';}).join(''):'<p style="color:#c9a8ff;font-size:12px;font-family:var(--fa);">Aucun exercice</p>';return '<div style="background:rgba(255,255,255,.08);border-radius:16px;padding:14px;margin-bottom:10px;cursor:pointer;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display===\'block\'?\'none\':\'block\'"><div style="font-family:var(--fd);font-size:15px;color:#fff;">📂 '+s.name+'</div><div style="font-size:12px;color:#c9a8ff;font-family:var(--fa);font-weight:600;">'+fmtD(s.date)+' · '+s.pts+' pts · '+(s.results?s.results.length:0)+' exercice(s)</div></div><div style="display:none;background:rgba(255,255,255,.05);padding:12px;margin-bottom:10px;">'+r+'</div>';}).join('');return cur+'<div class="pc2"><h3>📋 Historique ('+sess.length+')</h3>'+hist+'</div>';}
+function pSessions(){var sess=getSess();var cur='';if(ST.sResults&&ST.sResults.length>0){cur='<div class="pc2" style="border:2px solid #d9a000;"><h3>📂 Session en cours: '+ST.sName+'</h3>'+ST.sResults.map(function(r){var col=r.score>=80?'#a5d6a7':r.score>=50?'#ffe984':'#ffb3b3';return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);font-family:var(--fa);font-weight:600;font-size:13px;color:#d8c8ff;"><span>'+r.type+'</span><span style="font-family:var(--fd);font-size:16px;color:'+col+';">'+r.correct+'/'+r.total+' ('+r.score+'%)</span></div>';}).join('')+'<div style="margin-top:12px;"><button class="btn btn-coral" style="width:100%;font-size:15px;" onclick="saveAndEnd()">💾 Terminer et enregistrer</button></div></div>';}if(!sess.length&&(!ST.sResults||!ST.sResults.length)){return cur+'<div class="pc2"><h3>📋 Historique</h3><p style="color:#c9a8ff;font-size:13px;font-family:var(--fa);font-weight:600;">Aucune session. Commence depuis connexion!</p></div>';}var hist=sess.map(function(s){var r=s.results&&s.results.length?s.results.map(function(r){var col=r.score>=80?'#a5d6a7':r.score>=50?'#ffe984':'#ffb3b3';return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);font-family:var(--fa);font-weight:600;font-size:12px;color:#d8c8ff;"><span>'+r.type+'</span><span style="font-family:var(--fd);color:'+col+';">'+r.correct+'/'+r.total+' ('+r.score+'%)</span></div>';}).join(''):'<p style="color:#c9a8ff;font-size:12px;font-family:var(--fa);">Aucun exercice</p>';return '<div style="background:rgba(255,255,255,.08);border-radius:16px;padding:14px;margin-bottom:10px;cursor:pointer;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display===\'block\'?\'none\':\'block\'"><div style="font-family:var(--fd);font-size:15px;color:#fff;">📂 '+s.name+'</div><div style="font-size:12px;color:#c9a8ff;font-family:var(--fa);font-weight:600;">'+fmtD(s.date)+' · '+(s.mode==='passeport'&&s.targetLevel?'🎒 Passeport → '+LEVELS[s.targetLevel].label:'📚 Révision T'+(s.trimestre||1))+' · '+s.pts+' pts · '+(s.results?s.results.length:0)+' exercice(s)</div></div><div style="display:none;background:rgba(255,255,255,.05);padding:12px;margin-bottom:10px;">'+r+'</div>';}).join('');return cur+'<div class="pc2"><h3>📋 Historique ('+sess.length+')</h3>'+hist+'</div>';}
 function pStats(){
   var bars=getStatsForProfile();
   var weaknesses=CURRENT_PROFILE?getWeaknessSummary(CURRENT_PROFILE.id):[];
@@ -2290,16 +2441,38 @@ function pBilan(){
 }
 
 function pProg(){
+  var isPasseport=ST.sessionMode==='passeport' && ST.targetLevel && CURRENT_PROFILE;
+  if(isPasseport){
+    var src1=getProgForProfile();
+    var tgt=ST.targetLevel;
+    var src2=getProgForLevelKey(tgt);
+    var html='<div class="pc2" style="border:2px solid var(--teal-d);"><h3>🎒 Passeport '+LEVELS[oldProfLevel].label+' → '+LEVELS[tgt].label+'</h3><p style="color:#c9a8ff;font-size:12px;margin-bottom:10px;font-family:var(--fa);font-weight:600;">Programme de transition — matriser la fin du niveau actuel et preparer le suivant.</p>';
+    if(src1){
+      var lastTri=src1.data[src1.data.length-1];
+      html+='<div class="ptri">📅 A consolider ('+src1.label+' — Trimestre 3)</div>'+lastTri.subjs.map(function(s){return '<div class="psubj"><div class="psubjn">'+s.name+'</div><div class="ptags">'+s.items.map(function(i){return '<span class="ptag">'+i+'</span>';}).join('')+'</div></div>';}).join('');
+    }
+    if(src2){
+      var firstTri=src2.data[0];
+      html+='<div class="ptri">📅 A preparer ('+src2.label+' — Trimestre 1)</div>'+firstTri.subjs.map(function(s){return '<div class="psubj"><div class="psubjn">'+s.name+'</div><div class="ptags">'+s.items.map(function(i){return '<span class="ptag">'+i+'</span>';}).join('')+'</div></div>';}).join('');
+    }
+    html+='</div>';
+    return html;
+  }
   var resolved=getProgForProfile();
   if(!resolved){
     var profLevel=CURRENT_PROFILE?LEVELS[CURRENT_PROFILE.level]:null;
     var lvlLabel=profLevel?profLevel.label:'ce niveau';
-    return '<div class="pc2" style="background:rgba(249,198,33,.1);border-color:rgba(249,198,33,.3);"><h3>ℹ️ Programme '+lvlLabel+'</h3><p style="color:#ffe9a8;font-size:13px;font-family:var(--fa);font-weight:600;">Le detail du programme officiel pour ce niveau est en cours d ajout. Les exercices restent generes par IA selon le programme francais/AEFE de '+lvlLabel+'.</p></div>';
+    return '<div class="pc2" style="background:rgba(249,198,33,.1);border-color:rgba(249,198,33,.3);"><h3>ℹ️ Programme '+lvlLabel+'</h3><p style="color:#ffe9a8;font-size:13px;font-family:var(--fa);font-weight:600;">Le detail du programme officiel pour ce niveau est en cours d ajout.</p></div>';
   }
   var data=resolved.data;
   var src=resolved.src;
   var lvlLabel=resolved.label;
-  return '<div class="pc2"><h3>📘 Programme officiel '+lvlLabel+'</h3><p style="color:#c9a8ff;font-size:12px;margin-bottom:12px;font-family:var(--fa);font-weight:600;">Source : '+src+' · Applicable rentree 2025 · Identique dans tous les etablissements AEFE homologues</p>'+data.map(function(tri){return '<div class="ptri">📅 '+tri.tri+'</div>'+tri.subjs.map(function(s){return '<div class="psubj"><div class="psubjn">'+s.name+'</div><div class="ptags">'+s.items.map(function(i){return '<span class="ptag">'+i+'</span>';}).join('')+'</div></div>';}).join('');}).join('')+'</div>';
+  var filteredData=data;
+  if(ST.sessionMode==='revision'){
+    filteredData=[data[ST.trimestre-1]].filter(Boolean);
+  }
+  var triHeader=ST.sessionMode==='revision'?' — Trimestre '+ST.trimestre+' uniquement':'';
+  return '<div class="pc2"><h3>📘 Programme '+lvlLabel+triHeader+'</h3><p style="color:#c9a8ff;font-size:12px;margin-bottom:12px;font-family:var(--fa);font-weight:600;">Source : '+src+'</p>'+filteredData.map(function(tri){return '<div class="ptri">📅 '+tri.tri+'</div>'+tri.subjs.map(function(s){return '<div class="psubj"><div class="psubjn">'+s.name+'</div><div class="ptags">'+s.items.map(function(i){return '<span class="ptag">'+i+'</span>';}).join('')+'</div></div>';}).join('');}).join('')+'</div>';
 }
 
 function setPlvl(l){ST.plvl=l;renderPTab();}
@@ -2322,12 +2495,23 @@ function confetti(){
 
 
 function saveAndEnd(){var sess={name:ST.sName,date:Date.now(),pts:ST.pts,results:ST.sResults.slice()};saveSess(sess);confetti();var v=document.getElementById('v-dash');v.innerHTML=sb()+'<div class="cwrap"><div style="font-size:60px;margin-bottom:10px;">💾</div><h2 style="font-family:var(--fd);font-size:24px;">Session enregistree!</h2><p style="font-family:var(--fa);font-weight:700;margin:10px auto;max-width:280px;color:var(--ink-soft);">'+ST.sName+' — '+ST.pts+' PokePoints</p><div style="margin-top:20px;display:flex;flex-direction:column;gap:10px;"><button class="btn btn-purple btn-block" onclick="openSess()">📋 Voir les sessions</button><button class="btn btn-gold btn-block" onclick="goTo('+"'"+'login'+"'"+')">🚀 Nouvelle session</button></div></div>';}
-function startSess(){var n=document.getElementById('sni');if(!n||!n.value.trim()){alert('Donne un nom!');return;}ST.sName=n.value.trim();ST.pts=0;ST.streak=0;ST.sResults=[];goTo('diag');}
+function startSess(){
+  var n=document.getElementById('sni');
+  if(!n||!n.value.trim()){alert('Donne un nom a la session!');return;}
+  ST.sName=n.value.trim();
+  ST.pts=0;ST.streak=0;ST.sResults=[];
+  if(ST.sessionMode==='passeport'){
+    var sel=document.getElementById('targetLvlSel');
+    ST.targetLevel=sel?sel.value:null;
+    if(!ST.targetLevel){alert('Choisis le niveau cible!');return;}
+  }
+  goTo('diag');
+}
 function getSess(){if(!CURRENT_PROFILE)return[];return getSessionsFor(CURRENT_PROFILE.id);}
 function saveSess(s){if(!CURRENT_PROFILE)return;saveSessionFor(CURRENT_PROFILE.id,s);}
 function fmtD(ts){var d=new Date(ts);return d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear()+' '+d.getHours()+'h'+String(d.getMinutes()).padStart(2,'0');}
 function scC(p){return p>=80?'#a5d6a7':p>=50?'#ffe984':'#ffb3b3';}
-function saveAndEnd(){var s={name:ST.sName,date:Date.now(),pts:ST.pts,results:ST.sResults.slice()};saveSess(s);confetti();renderDash();}
+function saveAndEnd(){var s={name:ST.sName,date:Date.now(),pts:ST.pts,results:ST.sResults.slice(),mode:ST.sessionMode,trimestre:ST.trimestre,targetLevel:ST.targetLevel};saveSess(s);confetti();renderDash();}
 function openSess(){ST.ptab='sessions';goTo('parent');}
 
 // ═══════════════════════════════════════════════
