@@ -2218,7 +2218,7 @@ async function renderProfiles(){
   var view=document.getElementById('v-profiles');
   var profiles=await getProfiles();
   var students=profiles.filter(function(p){return (p.role||'student')!=='parent';});
-  var parents=profiles.filter(function(p){return p.role==='parasync ent';});
+  var parents=profiles.filter(function(p){return p.role==='parent';});
 
   function makeCard(p){
     var isParent=(p.role==='parent');
@@ -2281,6 +2281,9 @@ var NEW_PROFILE_LEVEL=null;
 var NEW_PROFILE_ROLE='student';
 var NEW_PROFILE_PARENT_ID=null;
 
+function setRoleStudent(){NEW_PROFILE_ROLE='student';loadAndRenderNewProfile();}
+function setRoleParent(){NEW_PROFILE_ROLE='parent';loadAndRenderNewProfile();}
+
 async function loadAndRenderNewProfile(){
   var parents=[];
   try{
@@ -2294,52 +2297,55 @@ function renderNewProfile(parents){
   parents=parents||[];
   var view=document.getElementById('v-newprofile');
   if(!view) return;
-  var emojis=['\U0001f9d2','\U0001f467','\U0001f466','\U0001f9b8','\U0001f9d1\u200d\U0001f393','\u2b50'];
+  var emojis=['🧒','👧','👦','🦸','🧑‍🎓','⭐'];
+  var isParent=(NEW_PROFILE_ROLE==='parent');
+
   var groupsHTML=LEVEL_GROUPS.map(function(g){
     return '<div class="lvl-group"><div class="lvl-group-label">'+g.label+'</div>'
       +'<div class="lvl-grid">'+g.levels.map(function(lk){
         var l=LEVELS[lk];
-        var sel=NEW_PROFILE_LEVEL===lk;
+        var sel=(NEW_PROFILE_LEVEL===lk);
         return '<div class="lvl-btn '+(sel?'selected':'')+'" onclick="pickLevel(\''+lk+'\')">'+l.label+'</div>';
       }).join('')+'</div></div>';
   }).join('');
-
-  var isParent=(NEW_PROFILE_ROLE==='parent');
 
   var parentLinksHTML='';
   if(!isParent && parents.length>0){
     parentLinksHTML='<div style="font-family:var(--fd);font-size:13px;font-weight:700;color:var(--ink);margin:14px 0 8px;">Lier à un compte parent</div>'
       +'<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;">'
-      +'<div onclick="pickParent(null)" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;cursor:pointer;transition:.15s;border:2px solid '+(NEW_PROFILE_PARENT_ID===null?'var(--teal)':'#e0e0e0')+';background:'+(NEW_PROFILE_PARENT_ID===null?'rgba(0,184,169,.08)':'#fff')+'">'
-      +'<span style="font-size:18px;">\U0001f6ab</span>'
-      +'<span style="font-family:var(--fa);font-weight:700;font-size:13px;color:var(--ink);">Pas de parent pour l\'instant</span>'
-      +(NEW_PROFILE_PARENT_ID===null?'<span style="margin-left:auto;color:var(--teal);font-weight:900;font-size:16px;">\u2713</span>':'')
+      +'<div onclick="pickParent(null)" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;cursor:pointer;border:2px solid '+(NEW_PROFILE_PARENT_ID===null?'var(--teal)':'#e0e0e0')+';background:'+(NEW_PROFILE_PARENT_ID===null?'rgba(0,184,169,.08)':'#fff')+';transition:.15s;">'
+      +'<span style="font-size:18px;">🚫</span>'
+      +'<span style="font-family:var(--fa);font-weight:700;font-size:13px;color:var(--ink);flex:1;">Pas de parent pour l\'instant</span>'
+      +(NEW_PROFILE_PARENT_ID===null?'<span style="color:var(--teal);font-weight:900;">✓</span>':'')
       +'</div>'
       +parents.map(function(p){
         var sel=(NEW_PROFILE_PARENT_ID===p.id);
-        return '<div onclick="pickParent(\''+p.id+'\')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;cursor:pointer;transition:.15s;border:2px solid '+(sel?'var(--purple)':'#e0e0e0')+';background:'+(sel?'rgba(155,89,245,.08)':'#fff')+'">'
-          +'<span style="font-size:22px;">'+(p.emoji||'\U0001f464')+'</span>'
+        return '<div onclick="pickParent(\''+p.id+'\')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;cursor:pointer;border:2px solid '+(sel?'var(--purple)':'#e0e0e0')+';background:'+(sel?'rgba(155,89,245,.08)':'#fff')+';transition:.15s;">'
+          +'<span style="font-size:22px;">'+(p.emoji||'👤')+'</span>'
           +'<div style="flex:1;"><div style="font-family:var(--fd);font-size:14px;color:var(--ink);">'+p.name+'</div>'
           +'<div style="font-size:11px;color:var(--ink-soft);font-family:var(--fa);font-weight:600;">Compte parent</div></div>'
-          +(sel?'<span style="color:var(--purple);font-weight:900;font-size:16px;">\u2713</span>':'')
+          +(sel?'<span style="color:var(--purple);font-weight:900;">✓</span>':'')
           +'</div>';
       }).join('')
       +'</div>';
   }
 
-  view.innerHTML='<div class="ltitle" style="font-size:26px;">Nouveau profil</div>'
+  var emojiHTML=emojis.map(function(e){
+    return '<div class="emoji-pick '+(NEW_PROFILE_EMOJI===e?'selected':'')+'" onclick="pickEmoji(\''+e+'\')">'+e+'</div>';
+  }).join('');
+
+  view.innerHTML=''
+    +'<div class="ltitle" style="font-size:26px;">Nouveau profil</div>'
     +'<div class="card" style="margin-top:12px;width:100%;max-width:380px;">'
     +'<div style="font-family:var(--fd);font-size:13px;color:var(--ink-soft);margin-bottom:8px;">Avatar</div>'
-    +'<div style="display:flex;gap:8px;justify-content:center;margin-bottom:14px;">'
-    +emojis.map(function(e){return '<div class="emoji-pick '+(NEW_PROFILE_EMOJI===e?'selected':'')+'" onclick="pickEmoji(\''+e+'\')">'+e+'</div>';}).join('')
-    +'</div>'
+    +'<div style="display:flex;gap:8px;justify-content:center;margin-bottom:14px;">'+emojiHTML+'</div>'
     +'<input class="inp" id="npname" placeholder="'+(isParent?'Prénom du parent':'Prénom de l\'élève')+'" maxlength="30" style="margin-bottom:12px;"/>'
     +'<div style="font-family:var(--fd);font-size:13px;color:var(--ink-soft);margin-bottom:8px;">Type de compte</div>'
     +'<div style="display:flex;gap:8px;margin-bottom:14px;">'
-    +'<button onclick="loadAndRenderNewProfile()" data-role="student" id="btnEleve" style="flex:1;font-family:var(--fd);font-size:13px;padding:10px;border-radius:12px;cursor:pointer;'
+    +'<button onclick="setRoleStudent()" style="flex:1;font-family:var(--fd);font-size:13px;padding:10px;border-radius:12px;cursor:pointer;'
     +(!isParent?'background:linear-gradient(180deg,var(--teal-l),var(--teal));color:#fff;border:none;box-shadow:0 3px 0 var(--teal-d);':'background:#fff;color:var(--teal);border:3px solid var(--teal);')
     +'">Élève</button>'
-    +'<button onclick="NEW_PROFILE_ROLE=\'parent\';loadAndRenderNewProfile();" id="btnParent" style="flex:1;font-family:var(--fd);font-size:13px;padding:10px;border-radius:12px;cursor:pointer;'
+    +'<button onclick="setRoleParent()" style="flex:1;font-family:var(--fd);font-size:13px;padding:10px;border-radius:12px;cursor:pointer;'
     +(isParent?'background:linear-gradient(180deg,var(--purple-l),var(--purple));color:#fff;border:none;box-shadow:0 3px 0 var(--purple-d);':'background:#fff;color:var(--purple);border:3px solid var(--purple);')
     +'">Parent</button>'
     +'</div>'
@@ -2374,17 +2380,20 @@ async function createProfile(){
   };
   await saveProfile(profile);
   CURRENT_PROFILE=profile;
-  NEW_PROFILE_LEVEL=null;
-  NEW_PROFILE_EMOJI='🧒';
-  NEW_PROFILE_ROLE='student';
   ST.pts=0;ST.streak=0;ST.sName='';ST.sResults=[];
   if(profile.role==='parent'){
+    NEW_PROFILE_LEVEL=null;
+    NEW_PROFILE_EMOJI='🧒';
+    NEW_PROFILE_ROLE='student';
     await renderParentProfile();
     showScreen('parent');
   } else {
     if(NEW_PROFILE_PARENT_ID){
       await linkStudentToParent(NEW_PROFILE_PARENT_ID, profile.id);
     }
+    NEW_PROFILE_LEVEL=null;
+    NEW_PROFILE_EMOJI='🧒';
+    NEW_PROFILE_ROLE='student';
     NEW_PROFILE_PARENT_ID=null;
     goTo('login');
   }
