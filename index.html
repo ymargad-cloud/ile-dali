@@ -237,8 +237,8 @@ body{font-family:var(--fb);background:#e8f5e9;min-height:100vh;overflow-x:hidden
 // ⚙️ Config Supabase — remplace ces valeurs par tes vraies clés
 // Vercel injecte automatiquement les variables d'environnement si tu utilises
 // le build system. Pour un fichier statique, colle tes valeurs ici.
-window.__SUPABASE_URL__      = 'https://uklsubesjgaooigrcpem.supabase.co';
-window.__SUPABASE_ANON_KEY__ = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrbHN1YmVzamdhb29pZ3JjcGVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2NzE5NjMsImV4cCI6MjEwMTI0Nzk2M30.oOaHDkw8YYT1v4jTzoy_bu4xXqhdS0AmrISGJ65aBmA';
+window.__SUPABASE_URL__      = 'https://TON_ID.supabase.co';
+window.__SUPABASE_ANON_KEY__ = 'TON_ANON_KEY';
 </script>
 </head>
 <body>
@@ -465,8 +465,8 @@ function genericExosetsForLevel(levelKey){
 // Remplace et étend la couche v1
 // ═══════════════════════════════════════════════════════════════
 
-var SUPABASE_URL = window.__SUPABASE_URL__ || '';
-var SUPABASE_ANON_KEY = window.__SUPABASE_ANON_KEY__ || '';
+var SUPABASE_URL = window.__SUPABASE_URL__ || 'uklsubesjgaooigrcpem.supabase.co';
+var SUPABASE_ANON_KEY = window.__SUPABASE_ANON_KEY__ || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrbHN1YmVzamdhb29pZ3JjcGVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2NzE5NjMsImV4cCI6MjEwMTI0Nzk2M30.oOaHDkw8YYT1v4jTzoy_bu4xXqhdS0AmrISGJ65aBmA';
 var SUPABASE_READY = !!(SUPABASE_URL && SUPABASE_ANON_KEY);
 
 // ─── Client REST minimaliste ────────────────────────────────────
@@ -534,30 +534,47 @@ function _lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catc
 
 // ═══ PROFILS (élèves + parents) ════════════════════════════════
 async function getProfiles() {
-  if (!SUPABASE_READY) return _lsGet('ile_profiles') || [];
-  return await SB.select('profiles', null, 'created_at') || [];
+  // Toujours essayer localStorage d'abord comme cache
+  var cached = _lsGet('ile_profiles') || [];
+  if (!SUPABASE_READY) return cached;
+  try {
+    var remote = await SB.select('profiles', null, 'created_at');
+    if (remote && remote.length > 0) {
+      _lsSet('ile_profiles', remote); // mettre à jour le cache local
+      return remote;
+    }
+    return cached; // fallback si Supabase retourne vide
+  } catch(e) {
+    return cached; // fallback si Supabase échoue
+  }
 }
 
 async function saveProfile(p) {
-  if (!SUPABASE_READY) {
-    var all = _lsGet('ile_profiles') || [];
-    var idx = all.findIndex(function(x){ return x.id===p.id; });
-    if (idx >= 0) all[idx] = p; else all.push(p);
-    _lsSet('ile_profiles', all);
-    return;
+  // Toujours sauvegarder en localStorage (source de vérité locale)
+  var all = _lsGet('ile_profiles') || [];
+  var idx = all.findIndex(function(x){ return x.id===p.id; });
+  if (idx >= 0) all[idx] = p; else all.push(p);
+  _lsSet('ile_profiles', all);
+  // Essayer aussi Supabase si disponible
+  if (SUPABASE_READY) {
+    try {
+      await SB.upsert('profiles', {
+        id: p.id, name: p.name, emoji: p.emoji||'🧒',
+        level: p.level||null, role: p.role||'student', pin: p.pin||null
+      });
+    } catch(e) {
+      console.warn('Supabase saveProfile failed, localStorage used:', e);
+    }
   }
-  await SB.upsert('profiles', {
-    id: p.id, name: p.name, emoji: p.emoji||'🧒',
-    level: p.level||null, role: p.role||'student', pin: p.pin||null
-  });
 }
 
 async function deleteProfile(id) {
-  if (!SUPABASE_READY) {
-    _lsSet('ile_profiles', (_lsGet('ile_profiles')||[]).filter(function(x){return x.id!==id;}));
-    return;
+  // Toujours supprimer du localStorage
+  _lsSet('ile_profiles', (_lsGet('ile_profiles')||[]).filter(function(x){return x.id!==id;}));
+  // Essayer aussi Supabase
+  if (SUPABASE_READY) {
+    try { await SB.delete('profiles', {id: id}); } catch(e) {}
   }
-  await SB.delete('profiles', {id: id});
 }
 
 // ═══ LIENS PARENT ↔ ÉLÈVE ══════════════════════════════════════
@@ -1747,7 +1764,10 @@ function goTo(name){
     NEW_PROFILE_LEVEL=null;
     NEW_PROFILE_EMOJI='🧒';
     NEW_PROFILE_PARENT_ID=null;
+    // Afficher d'abord l'écran vide, puis charger les parents
+    showScreen('newprofile');
     loadAndRenderNewProfile();
+    return; // éviter le showScreen() en bas de goTo
   }
   else if(name==='login') renderLogin2();
   else if(name==='results') renderResults();
@@ -2288,8 +2308,12 @@ async function loadAndRenderNewProfile(){
   var parents=[];
   try{
     var all=await getProfiles();
-    parents=all.filter(function(p){return (p.role||'student')==='parent';});
-  }catch(e){}
+    console.log('[Ile] Profils chargés:', all.length, all.map(function(p){return p.name+'/'+p.role;}));
+    parents=all.filter(function(p){return p.role==='parent';});
+    console.log('[Ile] Parents trouvés:', parents.length);
+  }catch(e){
+    console.warn('[Ile] Erreur chargement profils:', e);
+  }
   renderNewProfile(parents);
 }
 
