@@ -769,20 +769,22 @@ async function updateSessionPts(sessionId, pts) {
 async function saveExerciseResult(sessionId, profileId, subject, subjectLabel, score, total) {
   var pct = total > 0 ? Math.round(score/total*100) : 0;
   var r = {
-    session_id:    sessionId,
-    profile_id:    profileId,
-    subject:       subject,
-    subject_label: subjectLabel,
-    score:         score,
-    total:         total,
-    pct:           pct
+    session_id: sessionId, profile_id: profileId,
+    subject: subject, subject_label: subjectLabel,
+    score: score, total: total, pct: pct,
+    created_at: new Date().toISOString()
   };
-  // Toujours sauvegarder en localStorage
+  // Index par sessionId
   var key = 'ile_exres_' + sessionId;
   var all = _lsGet(key) || [];
   all.push(r);
   _lsSet(key, all);
-  // Essayer Supabase
+  // Index aussi par profileId pour vue parent
+  var key2 = 'ile_exres_p_' + profileId;
+  var all2 = _lsGet(key2) || [];
+  all2.push(r);
+  if(all2.length > 200) all2 = all2.slice(-200);
+  _lsSet(key2, all2);
   if (SUPABASE_READY) {
     try { await SB.insert('exercise_results', r); } catch(e) {}
   }
@@ -791,21 +793,22 @@ async function saveExerciseResult(sessionId, profileId, subject, subjectLabel, s
 // Enregistre le détail de chaque réponse
 async function saveQuestionAnswer(sessionId, profileId, subject, question, options, givenIndex, correctIndex) {
   var qa = {
-    session_id:    sessionId,
-    profile_id:    profileId,
-    subject:       subject,
-    question:      question,
-    options:       options,
-    given_index:   givenIndex,
-    correct_index: correctIndex,
-    is_correct:    (givenIndex === correctIndex)
+    session_id: sessionId, profile_id: profileId,
+    subject: subject, question: question, options: options,
+    given_index: givenIndex, correct_index: correctIndex,
+    is_correct: (givenIndex === correctIndex),
+    created_at: new Date().toISOString()
   };
-  // Toujours sauvegarder en localStorage
   var key = 'ile_qa_' + sessionId;
   var all = _lsGet(key) || [];
   all.push(qa);
   _lsSet(key, all);
-  // Essayer Supabase
+  // Index aussi par profileId
+  var key2 = 'ile_qa_p_' + profileId;
+  var all2 = _lsGet(key2) || [];
+  all2.push(qa);
+  if(all2.length > 500) all2 = all2.slice(-500);
+  _lsSet(key2, all2);
   if (SUPABASE_READY) {
     try { await SB.insert('question_answers', qa); } catch(e) {}
   }
@@ -876,6 +879,7 @@ function fmtD(ts) {
 
 // ID de session courant (initialisé au démarrage de la session)
 var CURRENT_SESSION_ID = null;
+var CURRENT_STUDENT_ID = null;
 
 var CURRENT_PROFILE=null;
 var ST={pts:0,streak:0,quizIdx:0,quizScore:0,exStep:0,exCorrect:0,exQs:[],exSet:'',ptab:'sessions',plvl:'CE2',sName:'',sResults:[],sessionMode:'revision',trimestre:1,targetLevel:null};
@@ -1051,7 +1055,23 @@ var DIAGQ_2NDE=[
 
 function getDiagQForProfile(){
   var levelKey=CURRENT_PROFILE?CURRENT_PROFILE.level:'CE2';
-  return getDiagQForLevel(levelKey);
+  var base=getDiagQForLevel(levelKey)||[];
+  // Renouveler : mélanger à chaque fois
+  var shuffled=base.slice().sort(function(){return Math.random()-.5;});
+  // En mode passeport, mélanger aussi des questions du niveau cible
+  if(ST.sessionMode==='passeport' && ST.targetLevel){
+    var tgtBase=getDiagQForLevel(ST.targetLevel)||[];
+    var tgtShuffled=tgtBase.slice().sort(function(){return Math.random()-.5;});
+    // Alterner : 1 question niveau actuel, 1 question niveau cible
+    var mixed=[];
+    var maxLen=Math.max(shuffled.length,tgtShuffled.length);
+    for(var i=0;i<maxLen;i++){
+      if(i<shuffled.length) mixed.push(shuffled[i]);
+      if(i<tgtShuffled.length) mixed.push(tgtShuffled[i]);
+    }
+    return mixed;
+  }
+  return shuffled;
 }
 
 // ═══════════════════════════════════════════════
@@ -1260,15 +1280,31 @@ function getStatsForProfile(){
 // ILE PERSONNALISEE — calculee a partir des vraies sessions du profil
 // ═══════════════════════════════════════════════
 async function getIslandStatsForProfile(){
-  if(!CURRENT_PROFILE) return {level:1,buildings:1,creatures:0,totalPts:0};
+  if(!CURRENT_PROFILE) return {level:1,buildings:0,creatures:0,totalPts:0,totalExos:0,mission:1,missionProgress:0};
   var sessions=await getSessionsFor(CURRENT_PROFILE.id);
   if(!Array.isArray(sessions)) sessions=[];
   var totalPts=sessions.reduce(function(s,sess){return s+(sess.pts||0);},0)+ST.pts;
-  var totalExos=sessions.reduce(function(s,sess){return s+(sess.results?sess.results.length:0);},0)+(ST.sResults?ST.sResults.length:0);
+  var totalExos=sessions.filter(function(s){return s.mode==='revision';}).length;
+  var totalPasseport=sessions.filter(function(s){return s.mode==='passeport';}).length;
+  // Mission 1 : premiers exercices (0-5 sessions)
+  // Mission 2 : révision complète (T1+T2+T3, 6-15 sessions)
+  // Mission 3 : passeport (après M2, avec sessions passeport)
+  var mission=1;
+  var missionProgress=0;
+  if(totalExos>=6){
+    mission=2;
+    missionProgress=Math.min(100,Math.round((totalExos-5)/10*100));
+  }
+  if(totalExos>=15){
+    mission=3;
+    missionProgress=Math.min(100,Math.round(totalPasseport/5*100));
+  }
   var level=Math.max(1,Math.floor(totalPts/50)+1);
-  var buildings=Math.max(1,Math.min(12,Math.floor(totalExos/2)+1));
-  var creatures=Math.max(0,Math.min(8,Math.floor(totalExos/4)));
-  return {level:level,buildings:buildings,creatures:creatures,totalPts:totalPts};
+  var buildings=Math.max(0,Math.min(20,totalExos));
+  var creatures=Math.max(0,Math.min(8,Math.floor(totalPts/100)));
+  return {level:level,buildings:buildings,creatures:creatures,
+          totalPts:totalPts,totalExos:totalExos,totalPasseport:totalPasseport,
+          mission:mission,missionProgress:missionProgress};
 }
 
 // ═══════════════════════════════════════════════
@@ -2759,12 +2795,132 @@ function redeem(cost,btn){
 
 async function renderIsland(){
   var stats=await getIslandStatsForProfile();
-  var lvl=CURRENT_PROFILE?LEVELS[CURRENT_PROFILE.level]:null;
-  var lvlLabel=lvl?lvl.label:'CE2';
-  var creatureEmojis=['🐢','🔥','🦊','🦋','🐬','🦉','🐉','🦄'];
-  var unlockedCreatures=creatureEmojis.slice(0,stats.creatures);
-  var lockedCount=Math.max(0,3-stats.creatures);
-  return '<div class="view" id="v-island">'+sb()+'<div class="st">🏝️ L\'Ile de '+(CURRENT_PROFILE?CURRENT_PROFILE.name:'Ali')+'</div><div class="ss">Niveau '+lvlLabel+' · Chaque exercice reussi fait grandir ton ile !</div><div class="icard" style="min-height:230px;"><div class="ilbl">Niveau '+stats.level+' · '+stats.buildings+' batiments</div><span class="ideco" style="top:28px;left:28px;font-size:34px;">🏠</span><span class="ideco" style="top:62px;left:110px;font-size:26px;">🌳</span><span class="ideco" style="top:36px;right:36px;font-size:34px;">🏰</span><span class="ideco" style="top:108px;left:55px;font-size:28px;">⚡</span><span class="ideco" style="top:112px;right:75px;font-size:26px;">🐉</span><div class="istats"><div class="istat">🏠 '+stats.buildings+' batiments</div><div class="istat">🐾 '+stats.creatures+' creatures</div></div></div><div class="card"><div style="font-family:var(--fd);font-size:16px;margin-bottom:10px;">🐾 Creatures debloquees</div><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;"><div style="width:48px;height:48px;">'+zappySVG('happy')+'</div>'+unlockedCreatures.map(function(e){return '<span style="font-size:32px;">'+e+'</span>';}).join('')+Array(lockedCount).fill('<span style="font-size:32px;opacity:.3;">❓</span>').join('')+'</div><p style="font-size:13px;margin-top:10px;font-family:var(--fa);font-weight:600;color:var(--ink-soft);">Continue les exercices pour debloquer de nouvelles creatures !</p></div></div>';
+  var lvlKey=CURRENT_PROFILE?CURRENT_PROFILE.level:'CE2';
+  var lvl=LEVELS[lvlKey]||{label:lvlKey,cycle:'',order:1};
+  var lvlLabel=lvl.label;
+  var profileName=CURRENT_PROFILE?CURRENT_PROFILE.name:'Eleve';
+  var levelOrder=['CP','CE1','CE2','CM1','CM2','SIXIEME','CINQUIEME','QUATRIEME','TROISIEME','SECONDE','PREMIERE','TERMINALE'];
+  var currentIdx=levelOrder.indexOf(lvlKey);
+  var nextLvlKey=currentIdx>=0&&currentIdx<levelOrder.length-1?levelOrder[currentIdx+1]:null;
+  var nextLvlLabel=nextLvlKey&&LEVELS[nextLvlKey]?LEVELS[nextLvlKey].label:null;
+  var isTerminale=(lvlKey==='TERMINALE');
+
+  var mission=stats.mission||1;
+  var prog=stats.missionProgress||0;
+
+  // ─── Dessin SVG île progressif ────────────────────────
+  var buildings=stats.buildings||0;
+  var pts=stats.totalPts||0;
+
+  // Éléments débloqués selon progression
+  var showBeach=true;
+  var showHut=(buildings>=1);
+  var showTree1=(buildings>=2);
+  var showTree2=(buildings>=3);
+  var showHouse=(buildings>=4);
+  var showTower=(buildings>=6);
+  var showCastle=(buildings>=10);
+  var showCreature1=(pts>=50);
+  var showCreature2=(pts>=150);
+  var showCreature3=(pts>=300);
+  var showRainbow=(pts>=500);
+  var showVolcano=(mission>=3);
+
+  var svgIsland='<svg viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:320px;border-radius:18px;overflow:visible;">'
+    // Ciel
+    +'<rect width="320" height="200" fill="'+(showRainbow?'#e8f4ff':'#b3e5fc')+'" rx="18"/>'
+    // Arc-en-ciel
+    +(showRainbow?'<path d="M20,100 Q160,20 300,100" fill="none" stroke="#ff6b6b" stroke-width="4" opacity=".6"/><path d="M25,105 Q160,28 295,105" fill="none" stroke="#f9c621" stroke-width="4" opacity=".6"/><path d="M30,110 Q160,36 290,110" fill="none" stroke="#4caf50" stroke-width="4" opacity=".5"/>':'')
+    // Soleil
+    +'<circle cx="270" cy="40" r="22" fill="#f9c621"/>'
+    +'<line x1="270" y1="12" x2="270" y2="5" stroke="#f9c621" stroke-width="3"/>'
+    +'<line x1="270" y1="68" x2="270" y2="75" stroke="#f9c621" stroke-width="3"/>'
+    +'<line x1="242" y1="40" x2="235" y2="40" stroke="#f9c621" stroke-width="3"/>'
+    +'<line x1="298" y1="40" x2="305" y2="40" stroke="#f9c621" stroke-width="3"/>'
+    // Mer
+    +'<ellipse cx="160" cy="175" rx="145" ry="30" fill="#29b6f6" opacity=".7"/>'
+    +'<ellipse cx="160" cy="170" rx="130" ry="25" fill="#0288d1" opacity=".5"/>'
+    // Île (sable)
+    +'<ellipse cx="160" cy="150" rx="110" ry="35" fill="#f5e642"/>'
+    +'<ellipse cx="160" cy="148" rx="100" ry="28" fill="#ffe98a"/>'
+    // Palmier
+    +(showTree1?'<line x1="220" y1="148" x2="218" y2="110" stroke="#795548" stroke-width="4"/><ellipse cx="218" cy="108" rx="14" ry="10" fill="#4caf50"/><ellipse cx="208" cy="112" rx="10" ry="7" fill="#66bb6a" transform="rotate(-20 208 112)"/><ellipse cx="228" cy="112" rx="10" ry="7" fill="#66bb6a" transform="rotate(20 228 112)"/>':'')
+    +(showTree2?'<line x1="95" y1="148" x2="97" y2="115" stroke="#795548" stroke-width="4"/><ellipse cx="97" cy="113" rx="13" ry="9" fill="#4caf50"/><ellipse cx="88" cy="117" rx="9" ry="6" fill="#66bb6a" transform="rotate(-15 88 117)"/><ellipse cx="106" cy="117" rx="9" ry="6" fill="#66bb6a" transform="rotate(15 106 117)"/>':'')
+    // Cabane Mission 1
+    +(showHut?'<rect x="145" y="130" width="28" height="20" fill="#ff8a65" rx="3"/><polygon points="143,132 173,132 159,118" fill="#e64a19"/><rect x="155" y="138" width="8" height="12" fill="#4e342e"/>':'')
+    // Maison Mission 2
+    +(showHouse?'<rect x="80" y="128" width="32" height="22" fill="#42a5f5" rx="3"/><polygon points="78,130 114,130 96,114" fill="#1565c0"/><rect x="89" y="136" width="6" height="14" fill="#0d47a1"/><rect x="99" y="130" width="8" height="7" fill="#90caf9" rx="2"/>':'')
+    // Tour Mission 2+
+    +(showTower?'<rect x="180" y="122" width="22" height="28" fill="#ab47bc" rx="3"/><polygon points="179,124 203,124 191,108" fill="#7b1fa2"/><rect x="186" y="135" width="10" height="8" rx="1" fill="#9c27b0"/>'+'<rect x="178" y="122" width="4" height="6" fill="#7b1fa2"/><rect x="202" y="122" width="4" height="6" fill="#7b1fa2"/><rect x="190" y="118" width="4" height="6" fill="#7b1fa2"/>':'')
+    // Château Mission 3
+    +(showCastle?'<rect x="50" y="120" width="40" height="32" fill="#78909c" rx="2"/><rect x="48" y="118" width="8" height="10" fill="#546e7a"/><rect x="84" y="118" width="8" height="10" fill="#546e7a"/><rect x="62" y="116" width="18" height="8" fill="#546e7a"/><rect x="62" y="130" width="14" height="22" fill="#37474f"/><polygon points="50,120 90,120 70,102" fill="#607d8b"/>':'')
+    // Volcan (Mission 3)
+    +(showVolcano?'<polygon points="250,152 280,152 265,118" fill="#bf360c"/><polygon points="258,130 272,130 265,118" fill="#ff5722"/><circle cx="265" cy="116" r="5" fill="#ff1744"/><circle cx="260" cy="112" r="3" fill="#ff6d00"/><circle cx="270" cy="110" r="4" fill="#ff6d00"/>':'')
+    // Créatures
+    +(showCreature1?'<text x="148" y="165" font-size="16" text-anchor="middle">🐢</text>':'')
+    +(showCreature2?'<text x="175" y="162" font-size="14" text-anchor="middle">🦋</text>':'')
+    +(showCreature3?'<text x="130" y="163" font-size="15" text-anchor="middle">🐬</text>':'')
+    // Zappy sur l'île
+    +'<text x="162" y="148" font-size="18" text-anchor="middle">⚡</text>'
+    +'</svg>';
+
+  // ─── Missions ─────────────────────────────────────────
+  var m1done=(stats.totalExos>=5);
+  var m2done=(stats.totalExos>=15);
+  var m3done=(stats.totalPasseport>=5);
+
+  function missionCard(num,title,desc,done,active,progress,btnLabel,btnAction){
+    var color=done?'var(--green)':active?'var(--gold)':'#aaa';
+    var bg=done?'rgba(76,175,80,.1)':active?'rgba(249,198,33,.08)':'rgba(0,0,0,.04)';
+    var statusIcon=done?'✅':active?'🔓':'🔒';
+    return '<div style="background:'+bg+';border:2px solid '+color+';border-radius:16px;padding:14px;margin-bottom:12px;">'
+      +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">'
+      +'<span style="font-size:22px;">'+statusIcon+'</span>'
+      +'<div style="flex:1;">'
+      +'<div style="font-family:var(--fd);font-size:15px;color:var(--ink);">Mission '+num+' — '+title+'</div>'
+      +'<div style="font-size:12px;color:var(--ink-soft);font-family:var(--fa);font-weight:600;">'+desc+'</div>'
+      +'</div>'
+      +(done?'<span style="font-family:var(--fd);font-size:13px;color:var(--green);font-weight:700;">Terminee !</span>':'')
+      +'</div>'
+      +(active&&!done?'<div style="height:8px;background:#e8e8e8;border-radius:999px;overflow:hidden;margin-bottom:8px;"><div style="height:100%;width:'+progress+'%;background:'+color+';border-radius:999px;"></div></div>':'')
+      +(active&&!done?'<button class="btn btn-gold btn-block" style="font-size:13px;padding:9px;" onclick="'+btnAction+'">'+btnLabel+'</button>':'')
+      +'</div>';
+  }
+
+  var m1desc='Completer 5 exercices de revision';
+  var m2desc='Reviser les 3 trimestres (15 exercices)';
+  var m3desc=isTerminale?'Bravo, tu es au niveau maximum !':'Preparer le passage en '+( nextLvlLabel||'niveau superieur');
+  var m1prog=Math.min(100,Math.round((stats.totalExos/5)*100));
+  var m2prog=Math.min(100,Math.round(Math.max(0,stats.totalExos-5)/10*100));
+  var m3prog=Math.min(100,Math.round((stats.totalPasseport||0)/5*100));
+  var m1action="goTo('dash')";
+  var m2action="setSessionMode('revision');goTo('login')";
+  var m3action=isTerminale?'':("setSessionMode('passeport');goTo('login')");
+
+  var view=document.getElementById('v-island');
+  view.innerHTML=sb()
+    +'<div class="st">L\'Ile de '+profileName+'</div>'
+    +'<div class="ss">'+lvlLabel+' · '+stats.totalPts+' points</div>'
+    +'<div style="text-align:center;margin:12px auto 16px;">'+svgIsland+'</div>'
+    +'<div class="card" style="margin-bottom:14px;background:linear-gradient(135deg,#fff9e6,#fffde7);">'
+    +'<div style="font-family:var(--fd);font-size:16px;margin-bottom:4px;">Progression</div>'
+    +'<div style="display:flex;gap:12px;flex-wrap:wrap;">'
+    +'<span style="font-family:var(--fa);font-weight:700;font-size:13px;color:var(--ink-soft);">'+stats.totalExos+' exercices</span>'
+    +'<span style="font-family:var(--fa);font-weight:700;font-size:13px;color:var(--gold-d);">'+stats.totalPts+' pts</span>'
+    +'<span style="font-family:var(--fa);font-weight:700;font-size:13px;color:var(--purple);">Mission '+mission+'/3</span>'
+    +'</div></div>'
+    +missionCard(1,'Decouverte',m1desc,m1done,true,m1prog,'Faire un exercice',"goTo('dash')")
+    +missionCard(2,'Revision annuelle',m2desc,m2done,m1done,m2prog,'Commencer la revision',"setSessionModeAndGo('revision')")
+    +missionCard(3,isTerminale?'Bachelier !':('Passeport '+( nextLvlLabel||'niveau sup')),m3desc,m3done,m2done,m3prog,isTerminale?'':('Preparer '+nextLvlLabel),isTerminale?'':("setSessionModeAndGo('passeport')"));
+}
+
+function setSessionModeAndGo(mode){
+  ST.sessionMode=mode;
+  var btn=document.getElementById('modeRevBtn');
+  var btn2=document.getElementById('modePasBtn');
+  if(btn) btn.style.background=mode==='revision'?'linear-gradient(180deg,var(--teal-l),var(--teal))':'#fff';
+  if(btn2) btn2.style.background=mode==='passeport'?'linear-gradient(180deg,var(--gold-l),var(--gold))':'#fff';
+  goTo('login');
 }
 
 function renderBadges(){
@@ -3176,66 +3332,73 @@ async function viewStudentSessions(studentId){
 
 // ── Détail d'une session : résumé par matière + questions ───────
 async function viewSessionDetail(sessionId, studentId){
+  CURRENT_STUDENT_ID=studentId;
   var [results, answers] = await Promise.all([
     getExerciseResults(sessionId),
     getQuestionAnswers(sessionId)
   ]);
 
+  // Fallback : si pas de données par sessionId, chercher dans l'index profileId
+  if(results.length === 0){
+    var allResults = _lsGet('ile_exres_p_'+studentId) || [];
+    results = allResults.filter(function(r){ return r.session_id===sessionId; });
+  }
+  if(answers.length === 0){
+    var allQA = _lsGet('ile_qa_p_'+studentId) || [];
+    answers = allQA.filter(function(a){ return a.session_id===sessionId; });
+  }
+
   var view=document.getElementById('v-parent');
 
   var summaryHTML=results.length===0
-    ?'<p style="color:#c9a8ff;font-size:13px;font-family:var(--fa);">Aucun résumé enregistré.</p>'
+    ?'<p style="color:#c9a8ff;font-size:13px;font-family:var(--fa);">Pas encore de resultats. Ils apparaitront apres que l\'eleve ait complete un exercice.</p>'
     :results.map(function(r){
       var col=r.pct>=80?'var(--green)':r.pct>=50?'var(--gold)':'var(--coral)';
-      return '<div style="margin-bottom:10px;">'
-        +'<div style="display:flex;justify-content:space-between;font-family:var(--fd);font-size:14px;color:#fff;margin-bottom:4px;">'
+      var stars=r.pct>=80?'⭐⭐⭐':r.pct>=60?'⭐⭐':'⭐';
+      return '<div style="margin-bottom:12px;">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;font-family:var(--fd);font-size:14px;color:#fff;margin-bottom:4px;">'
         +'<span>'+(r.subject_label||r.subject)+'</span>'
-        +'<span style="color:'+col+';">'+r.score+'/'+r.total+' ('+r.pct+'%)</span>'
+        +'<span style="color:'+col+';">'+r.score+'/'+r.total+' ('+r.pct+'%) '+stars+'</span>'
         +'</div>'
-        +'<div style="height:10px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden;">'
+        +'<div style="height:10px;background:rgba(255,255,255,.1);border-radius:999px;overflow:hidden;">'
         +'<div style="height:100%;width:'+r.pct+'%;background:'+col+';border-radius:999px;transition:width .6s;"></div>'
         +'</div></div>';
     }).join('');
 
-  // Regrouper les réponses par matière
   var bySubject={};
   answers.forEach(function(a){
     if(!bySubject[a.subject]) bySubject[a.subject]=[];
     bySubject[a.subject].push(a);
   });
 
-  var detailHTML=Object.keys(bySubject).map(function(subj){
-    var qs=bySubject[subj];
-    var qHTML=qs.map(function(a,i){
-      var opts=Array.isArray(a.options)?a.options:[];
-      var correct=a.is_correct;
-      var givenOpt=opts[a.given_index]||'?';
-      var correctOpt=opts[a.correct_index]||'?';
-      return '<div style="border-left:3px solid '+(correct?'var(--green)':'var(--coral)')+';padding:8px 10px;margin-bottom:8px;background:rgba(255,255,255,.04);border-radius:0 8px 8px 0;">'
-        +'<div style="font-family:var(--fa);font-weight:700;font-size:13px;color:#fff;margin-bottom:4px;">'+(i+1)+'. '+a.question+'</div>'
-        +(correct
-          ?'<div style="font-size:12px;color:var(--green-l);font-family:var(--fa);">✅ '+givenOpt+'</div>'
-          :'<div style="font-size:12px;color:var(--coral-l);font-family:var(--fa);">❌ Donné : '+givenOpt+'</div>'
-           +'<div style="font-size:12px;color:var(--green-l);font-family:var(--fa);">✅ Correct : '+correctOpt+'</div>'
-        )
-        +'</div>';
+  var detailHTML=Object.keys(bySubject).length===0
+    ?'<div class="pc2"><h3>Questions</h3><p style="color:#c9a8ff;font-size:13px;font-family:var(--fa);">Aucun detail disponible pour cette session.</p></div>'
+    :Object.keys(bySubject).map(function(subj){
+      var qs=bySubject[subj];
+      var subjScore=qs.filter(function(a){return a.is_correct;}).length;
+      var qHTML=qs.map(function(a,i){
+        var opts=Array.isArray(a.options)?a.options:[];
+        var givenOpt=opts[a.given_index]||'?';
+        var rightOpt=opts[a.correct_index]||'?';
+        return '<div style="border-left:3px solid '+(a.is_correct?'var(--green)':'var(--coral)')+';padding:8px 10px;margin-bottom:8px;background:'+(a.is_correct?'rgba(76,175,80,.08)':'rgba(255,107,107,.08)')+';border-radius:0 8px 8px 0;">'
+          +'<div style="font-family:var(--fa);font-weight:700;font-size:13px;color:#fff;margin-bottom:4px;">'+(i+1)+'. '+(a.question||'')+'</div>'
+          +(a.is_correct
+            ?'<div style="font-size:12px;color:var(--green-l);font-family:var(--fa);font-weight:700;">Correct : '+givenOpt+'</div>'
+            :'<div style="font-size:12px;color:var(--coral-l);font-family:var(--fa);">Donne : '+givenOpt+'</div>'
+             +'<div style="font-size:12px;color:var(--green-l);font-family:var(--fa);font-weight:700;">Correct : '+rightOpt+'</div>'
+          )+'</div>';
+      }).join('');
+      return '<div class="pc2"><h3>'+(subj)+' — '+subjScore+'/'+qs.length+'</h3>'+qHTML+'</div>';
     }).join('');
-    var subjTotal=qs.length;
-    var subjScore=qs.filter(function(a){return a.is_correct;}).length;
-    return '<div class="pc2"><h3>'+(SUBJECT_LABELS[subj]?SUBJECT_LABELS[subj].icon+' '+SUBJECT_LABELS[subj].label:subj)
-      +' <span style="font-size:14px;color:var(--gold-l);">'+subjScore+'/'+subjTotal+'</span></h3>'
-      +qHTML+'</div>';
-  }).join('');
 
-  view.innerHTML='<div class="pw2"><div class="pt2">'
-    +'<h2>📊 Détail de session</h2>'
-    +'<button class="bk" onclick="viewStudentSessions(\''+studentId+'\')">↩ Sessions</button></div>'
-    +'<div class="pbody">'
-    +'<div class="pc2"><h3>📈 Récapitulatif par matière</h3>'+summaryHTML+'</div>'
-    +(detailHTML||'<div class="pc2"><h3>📝 Questions</h3><p style="color:#c9a8ff;font-size:13px;font-family:var(--fa);">Aucun détail enregistré.</p></div>')
-    +'</div></div>';
+  view.innerHTML='<div class="pw2"><div class="pt2"><h2>Resultats session</h2>'
+    +'<button class="bk" onclick="goBackToSessions()r</button></div>'
+    +'<div class="pbody"><div class="pc2"><h3>Recapitulatif par matiere</h3>'
+    +summaryHTML+'</div>'+detailHTML+'</div></div>';
 }
 
+
+function goBackToSessions(){viewStudentSessions(CURRENT_STUDENT_ID||'');}
 
 function init(){
   var app=document.getElementById('app');
