@@ -232,6 +232,78 @@ body{font-family:var(--fb);background:#e8f5e9;min-height:100vh;overflow-x:hidden
 .emenu-card{display:flex;align-items:center;gap:14px;background:#fff;border-radius:18px;padding:14px 16px;box-shadow:var(--shs);margin-bottom:12px;cursor:pointer;transition:.15s;}
 .emenu-card:hover{transform:translateY(-2px);box-shadow:var(--sh);}
 ::-webkit-scrollbar{width:0;height:0;}
+
+
+/* ─── MOBILE FIRST ─────────────────────────────── */
+html{-webkit-text-size-adjust:100%;}
+
+/* Safe area iPhone */
+.dnav{padding-bottom:max(12px,env(safe-area-inset-bottom));}
+
+/* Viewport plein écran propre */
+body{overscroll-behavior:none;}
+.app{padding-top:0;}
+
+/* Textes plus petits sur petit écran */
+@media(max-width:390px){
+  .ltitle{font-size:26px!important;}
+  .dh{font-size:20px!important;}
+  .opt{padding:11px 14px;font-size:14px;}
+  .btn{font-size:14px;padding:12px 18px;}
+  .card{padding:16px;}
+  .emenu-card{padding:12px 14px;gap:10px;}
+  .mi{width:44px!important;height:44px!important;font-size:22px!important;}
+  .lvl-btn{font-size:12px;padding:8px 10px;}
+  .prof-card{padding:12px;}
+  .dnav button{font-size:10px;padding:5px 3px;}
+  input.inp{font-size:16px;} /* évite zoom iOS */
+}
+
+/* Cartes exercice pleine largeur sur mobile */
+@media(max-width:480px){
+  .emenu-card{border-radius:14px;margin-bottom:10px;}
+  .mi{width:46px;height:46px;border-radius:12px;}
+  .view{padding:0 12px 120px;}
+}
+
+/* Boutons plus faciles à tapper */
+.opt{min-height:52px;display:flex;align-items:center;}
+.emenu-card{min-height:64px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.prof-card{-webkit-tap-highlight-color:transparent;}
+.btn{-webkit-tap-highlight-color:transparent;min-height:48px;}
+.emoji-pick{-webkit-tap-highlight-color:transparent;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;}
+.lvl-btn{min-height:40px;-webkit-tap-highlight-color:transparent;}
+
+/* Score bar plus visible */
+.score-bar{height:8px;border-radius:999px;background:#e8e8e8;overflow:hidden;margin:8px 0;}
+.score-fill{height:100%;border-radius:999px;transition:width .5s;}
+
+/* Questions : texte plus grand et lisible */
+.qtext{font-size:17px;line-height:1.5;margin-bottom:16px;}
+
+/* Progress indicator dans le quiz/exercice */
+.ex-progress{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px;}
+.ex-progress span{flex:1;min-width:8px;height:6px;border-radius:3px;background:#e0e0e0;}
+.ex-progress span.done{background:var(--teal);}
+.ex-progress span.correct{background:var(--green);}
+.ex-progress span.wrong{background:var(--coral);}
+
+/* Résultats par matière - barre claire */
+.result-bar{height:12px;border-radius:999px;background:#f0f0f0;overflow:hidden;margin:4px 0 12px;}
+.result-fill{height:100%;border-radius:999px;}
+
+/* Espace parent mobile */
+.pw2{padding:0;}
+.pt2{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.pc2{background:#fff1;border-radius:16px;padding:14px;margin-bottom:12px;}
+.pc2 h3{font-family:var(--fd);font-size:16px;color:#fff;margin-bottom:10px;}
+.pbody{padding:4px 0;}
+
+/* Bulle Zappy plus compacte sur mobile */
+@media(max-width:390px){
+  .bubble{padding:12px 14px;font-size:13px;}
+  .bk{font-size:13px;padding:7px 12px;}
+}
 </style>
 <script>
 // ⚙️ Config Supabase — remplace ces valeurs par tes vraies clés
@@ -465,12 +537,12 @@ function genericExosetsForLevel(levelKey){
 // Remplace et étend la couche v1
 // ═══════════════════════════════════════════════════════════════
 
-var SUPABASE_URL = window.__SUPABASE_URL__ || 'uklsubesjgaooigrcpem.supabase.co';
+var SUPABASE_URL = window.__SUPABASE_URL__ || '';
 // Corriger l'URL si https:// manque
 if(SUPABASE_URL && !SUPABASE_URL.startsWith('http')){
   SUPABASE_URL = 'https://' + SUPABASE_URL;
 }
-var SUPABASE_ANON_KEY = window.__SUPABASE_ANON_KEY__ || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrbHN1YmVzamdhb29pZ3JjcGVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2NzE5NjMsImV4cCI6MjEwMTI0Nzk2M30.oOaHDkw8YYT1v4jTzoy_bu4xXqhdS0AmrISGJ65aBmA';
+var SUPABASE_ANON_KEY = window.__SUPABASE_ANON_KEY__ || '';
 var SUPABASE_READY = !!(SUPABASE_URL && SUPABASE_ANON_KEY 
   && !SUPABASE_ANON_KEY.includes('COLLE_ICI')
   && !SUPABASE_ANON_KEY.includes('TON_ANON')
@@ -2460,10 +2532,16 @@ function renderExMenu(){
 
   function makeCard(k,ex,c,fnName,extraArg){
     var args=extraArg?("'"+k+"','"+extraArg+"'"):"'"+k+"'";
-    return '<div class="emenu-card" onclick="'+fnName+'('+args+')" style="border-left:6px solid '+c+';">'
-      +'<div class="mi" style="background:'+c+'22;border-color:'+c+';box-shadow:0 4px 0 '+c+'88;">'+ex.icon+'</div>'
-      +'<div class="mb"><div class="mn">'+ex.label+'</div><div class="md">30 questions</div></div>'
-      +'<div style="font-size:20px;">→</div></div>';
+    var bank=getFullQBank(CURRENT_PROFILE?CURRENT_PROFILE.level:'CE2',k);
+    var nTotal=bank.length;
+    var nLabel=nTotal>=30?'30 questions':(nTotal+' questions (+ IA)');
+    return '<div class="emenu-card" onclick="'+fnName+'('+args+')" style="border-left:5px solid '+c+';background:linear-gradient(135deg,#fff,'+c+'08);">'
+      +'<div class="mi" style="width:50px;height:50px;font-size:26px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:'+c+'18;border:2px solid '+c+'55;flex-shrink:0;">'+ex.icon+'</div>'
+      +'<div class="mb" style="flex:1;">'
+      +'<div class="mn" style="font-family:var(--fd);font-size:16px;color:var(--ink);">'+ex.label+'</div>'
+      +'<div class="md" style="font-size:12px;color:var(--ink-soft);font-family:var(--fa);font-weight:600;margin-top:2px;">'+nLabel+' · renouvelées</div>'
+      +'</div>'
+      +'<div style="font-size:22px;color:'+c+';">›</div></div>';
   }
 
   var cards='';
@@ -2481,12 +2559,17 @@ function renderExMenu(){
   }
 
   var modeTag=isPasseport?'🎒 Passeport':'📚 Révision T'+ST.trimestre;
+    var modeTag=isPasseport?'Passeport':'Revision T'+ST.trimestre;
+  var lvlLabel=LEVELS[levelKey]?LEVELS[levelKey].label:levelKey;
   view.innerHTML=sb()
-    +'<div style="margin:6px 0;"><span style="display:inline-block;background:linear-gradient(135deg,var(--teal-l),var(--teal));color:#fff;font-family:var(--fd);font-size:12px;padding:5px 12px;border-radius:999px;">'+modeTag+'</span></div>'
-    +'<div class="dh" style="font-size:22px;">Quelle matière ? 🎯</div>'
-    +bubble('Choisis ta mission ! 30 questions t\'attendent ⚡','excited')
-    +'<div style="margin-top:8px;">'+cards+'</div>'
-    +'<div style="margin-top:14px;"><button class="btn btn-gold btn-block" onclick="goTo(\'dash\')">← Tableau de bord</button></div>';
+    +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">'
+    +'<span style="display:inline-block;background:linear-gradient(135deg,var(--teal-d),var(--teal));color:#fff;font-family:var(--fd);font-size:12px;padding:5px 12px;border-radius:999px;">'+modeTag+'</span>'
+    +'<span style="display:inline-block;background:rgba(155,89,245,.15);color:var(--purple-d);font-family:var(--fd);font-size:12px;padding:5px 12px;border-radius:999px;">'+lvlLabel+'</span>'
+    +'</div>'
+    +'<div class="dh" style="font-size:22px;margin-bottom:4px;">Quelle matiere ?</div>'
+    +'<p style="font-family:var(--fa);font-weight:600;font-size:13px;color:var(--ink-soft);margin-bottom:14px;">30 questions uniques, renouvelees a chaque session</p>'
+    +'<div>'+cards+'</div>'
+    +'<div style="margin-top:16px;"><button class="btn btn-outline btn-block" onclick="goTo(\'dash\')" style="font-size:14px;">Retour</button></div>';
 }
 
 // startEx pour le niveau cible en mode passeport
@@ -2582,15 +2665,46 @@ function generateAI(setKey,levelKey,cb){
 }
 
 function renderEx(){
+  if(ST.exStep>=ST.exQs.length){renderExComplete();return;}
+  var q=ST.exQs[ST.exStep];
   var view=document.getElementById('v-exercise');
-  var qs=ST.exQs;
+  var n=ST.exQs.length;
+  var step=ST.exStep;
+  var pct=Math.round(step/n*100);
+
+  // Barre de progression dots
+  var dots='';
+  for(var d=0;d<Math.min(n,30);d++){
+    var cls=d<step?'done':'';
+    dots+='<span class="'+cls+'"></span>';
+  }
+
   var levelKey=CURRENT_PROFILE?CURRENT_PROFILE.level:'CE2';
   var lc=getLevelContent(levelKey);
   var exo=lc.exosets||genericExosetsForLevel(levelKey);
-  var set=exo[ST.exSet]||{icon:'📚',title:'Exercice',intro:'Reflechis bien.',tip:'Prends ton temps.'};
-  if(ST.exStep>=qs.length){renderExComplete();return;}
-  var q=qs[ST.exStep];
-  view.innerHTML=sb()+'<div style="display:flex;align-items:center;gap:10px;margin:12px 0 6px;"><button style="width:38px;height:38px;border-radius:50%;background:#fff;border:3px solid #e0d0ff;font-size:16px;cursor:pointer;box-shadow:var(--shs);" onclick="renderExMenu();showScreen(\'exercise\');">←</button><div class="pl">'+set.icon+' '+set.title+' — Question '+(ST.exStep+1)+'/'+qs.length+'</div><div style="margin-left:auto;display:flex;gap:3px;">❤️❤️❤️</div></div>'+bubble(set.intro+'<span class="tip">💡 '+set.tip+'</span>','thinking')+(q.texte?'<div style="background:#f0f8ff;border:2px solid var(--sky);border-radius:14px;padding:14px;margin-bottom:12px;font-family:var(--fa);font-weight:700;font-size:14px;line-height:1.6;color:var(--ink);">📖 '+q.texte+'</div>':'')+'<div class="qcard"><div class="qcons">📋 Lis bien et prends le temps de reflechir avant de repondre.</div><div class="qtext">'+q.q+'</div></div><div class="opts" id="eO">'+q.opts.map(function(o,i){return '<button class="opt" onclick="ansEx('+i+')"><span class="olet">'+'ABCD'[i]+'</span>'+o+'</button>';}).join('')+'</div><div class="fb" id="eFb"></div>';
+  var exSet=exo[ST.exSet]||{label:ST.exSet,icon:'📝'};
+
+  var optsHTML=(q.opts||[]).map(function(o,i){
+    return '<div class="opt" onclick="ansEx('+i+')" style="cursor:pointer;">'+o+'</div>';
+  }).join('');
+
+  view.innerHTML=sb()
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">'
+    +'<span style="font-family:var(--fd);font-size:13px;color:var(--ink-soft);">'+exSet.icon+' '+exSet.label+'</span>'
+    +'<span style="font-family:var(--fd);font-size:13px;color:var(--teal);">'+ST.exCorrect+' ✓ · '+(step-ST.exCorrect)+' ✗</span>'
+    +'</div>'
+    +'<div class="ex-progress">'+dots+'</div>'
+    +'<div style="font-family:var(--fd);font-size:12px;color:var(--ink-soft);text-align:right;margin-bottom:12px;">'+step+'/'+n+'</div>'
+    +'<div class="card" style="margin-bottom:14px;">'
+    +(q.texte?'<p style="font-family:var(--fa);font-size:14px;color:var(--ink-soft);margin-bottom:10px;line-height:1.5;background:#f8f8f8;border-radius:10px;padding:10px;">'+q.texte+'</p>':'')
+    +'<div class="qtext" style="font-family:var(--fd);font-size:17px;line-height:1.5;color:var(--ink);">'+( q.q||q.question||'')+'</div>'
+    +'</div>'
+    +'<div id="eO" style="display:flex;flex-direction:column;gap:10px;">'+optsHTML+'</div>'
+    +'<div id="eFb" class="fb"></div>'
+    +'<div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center;">'
+    +'<span style="font-family:var(--fd);font-size:14px;color:var(--gold-d);">⚡ '+ST.pts+' pts</span>'
+    +'<button class="btn btn-outline" onclick="goTo(\'exercise\')" style="font-size:13px;padding:8px 14px;">Changer de matiere</button>'
+    +'</div>';
 }
 
 async function ansEx(i){
