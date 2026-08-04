@@ -238,7 +238,7 @@ body{font-family:var(--fb);background:#e8f5e9;min-height:100vh;overflow-x:hidden
 // Vercel injecte automatiquement les variables d'environnement si tu utilises
 // le build system. Pour un fichier statique, colle tes valeurs ici.
 window.__SUPABASE_URL__      = 'https://uklsubesjgaooigrcpem.supabase.co';
-window.__SUPABASE_ANON_KEY__ = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrbHN1YmVzamdhb29pZ3JjcGVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2NzE5NjMsImV4cCI6MjEwMTI0Nzk2M30.oOaHDkw8YYT1v4jTzoy_bu4xXqhdS0AmrISGJ65aBmA';
+window.__SUPABASE_ANON_KEY__ = 'COLLE_ICI_TA_CLE_ANON';
 </script>
 </head>
 <body>
@@ -465,12 +465,12 @@ function genericExosetsForLevel(levelKey){
 // Remplace et étend la couche v1
 // ═══════════════════════════════════════════════════════════════
 
-var SUPABASE_URL = window.__SUPABASE_URL__ || '';
+var SUPABASE_URL = window.__SUPABASE_URL__ || 'uklsubesjgaooigrcpem.supabase.co';
 // Corriger l'URL si https:// manque
 if(SUPABASE_URL && !SUPABASE_URL.startsWith('http')){
   SUPABASE_URL = 'https://' + SUPABASE_URL;
 }
-var SUPABASE_ANON_KEY = window.__SUPABASE_ANON_KEY__ || '';
+var SUPABASE_ANON_KEY = window.__SUPABASE_ANON_KEY__ || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrbHN1YmVzamdhb29pZ3JjcGVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2NzE5NjMsImV4cCI6MjEwMTI0Nzk2M30.oOaHDkw8YYT1v4jTzoy_bu4xXqhdS0AmrISGJ65aBmA';
 var SUPABASE_READY = !!(SUPABASE_URL && SUPABASE_ANON_KEY 
   && !SUPABASE_ANON_KEY.includes('COLLE_ICI')
   && !SUPABASE_ANON_KEY.includes('TON_ANON')
@@ -1802,147 +1802,411 @@ var DIAGQ_CM1=[
 
 var QBANK_EXT = {
 
+
 CE2:{
   francais:[
-    {q:"Quel est le sujet dans : 'Les enfants jouent.'",opts:["Les enfants","jouent","aucun","enfants"],correct:0},
-    {q:"Quel est le féminin de 'boulanger' ?",opts:["boulangère","boulangeuse","boulangère","boulangerice"],correct:0},
+    {q:"Quel est le sujet de : 'Les enfants jouent.'",opts:["Les enfants","jouent","aucun","enfants"],correct:0},
+    {q:"Féminin de 'boulanger' ?",opts:["boulangère","boulangeuse","boulangette","boulangeresse"],correct:0},
     {q:"Trouve le verbe : 'Le chat dort sur le canapé.'",opts:["chat","dort","canapé","sur"],correct:1},
     {q:"Quel mot est mal orthographié ?",opts:["maison","château","cheveaux","soleil"],correct:2},
-    {q:"Quel mot est un adjectif : 'une grande maison rouge' ?",opts:["maison","une","grande","aucun"],correct:2},
     {q:"Pluriel de 'cheval' ?",opts:["chevals","chevaux","chevales","cheval"],correct:1},
-    {q:"Quel temps est : 'demain, je mangerai' ?",opts:["présent","passé composé","futur","imparfait"],correct:2},
+    {q:"Quel temps : 'demain je mangerai' ?",opts:["présent","passé composé","futur","imparfait"],correct:2},
     {q:"Trouve le COD : 'Marie mange une pomme.'",opts:["Marie","mange","une pomme","aucun"],correct:2},
-    {q:"Quelle est la nature de 'rapidement' ?",opts:["nom","adjectif","adverbe","verbe"],correct:2},
-    {q:"Quel mot est un synonyme de 'content' ?",opts:["triste","joyeux","fatigué","fâché"],correct:1},
-    {q:"Quel est l'antonyme de 'chaud' ?",opts:["tiède","froid","brûlant","doux"],correct:1},
-    {q:"Combien de syllabes dans 'papillon' ?",opts:["2","3","4","5"],correct:1}
+    {q:"Nature de 'rapidement' ?",opts:["nom","adjectif","adverbe","verbe"],correct:2},
+    {q:"Synonyme de 'content' ?",opts:["triste","joyeux","fatigué","fâché"],correct:1},
+    {q:"Antonyme de 'chaud' ?",opts:["tiède","froid","brûlant","doux"],correct:1},
+    {q:"Combien de syllabes dans 'papillon' ?",opts:["2","3","4","5"],correct:1},
+    {q:"Quel mot est un adjectif dans 'une grande maison rouge' ?",opts:["maison","une","grande","aucun"],correct:2},
+    {q:"Féminin de 'acteur' ?",opts:["acteure","actrice","actionne","acteuse"],correct:1},
+    {q:"Pluriel de 'bal' ?",opts:["bals","baux","bales","bal"],correct:0},
+    {q:"Quel est le nom dans : 'Le petit chien court.' ?",opts:["petit","chien","court","Le"],correct:1},
+    {q:"Quel verbe est au présent : 'il mange' ou 'il mangera' ?",opts:["il mangera","il mange","les deux","aucun"],correct:1},
+    {q:"Complément circonstanciel de lieu dans : 'Il court dans le parc.'",opts:["Il","court","dans le parc","aucun"],correct:2},
+    {q:"Quel mot est un verbe : 'La pluie tombe.' ?",opts:["La","pluie","tombe","aucun"],correct:2},
+    {q:"Masculin de 'reine' ?",opts:["prince","roi","roin","masculin"],correct:1},
+    {q:"Quel est le pluriel de 'genou' ?",opts:["genous","genoux","genouilles","genous"],correct:1},
+    {q:"'Il est parti.' → verbe à quel temps ?",opts:["présent","futur","passé composé","imparfait"],correct:2},
+    {q:"Quel mot est un déterminant dans 'une belle fleur' ?",opts:["belle","fleur","une","aucun"],correct:2},
+    {q:"Quel préfixe donne le contraire de 'possible' ?",opts:["in-","im-","dé-","mal-"],correct:1},
+    {q:"Dans 'Les chats dorment', 'chats' est au :",opts:["singulier masculin","pluriel masculin","pluriel féminin","singulier féminin"],correct:1},
+    {q:"'Vite' dans 'Il court vite' est :",opts:["adjectif","nom","adverbe","verbe"],correct:2},
+    {q:"Quel est le sujet dans : 'Demain, Paul viendra.' ?",opts:["Demain","Paul","viendra","aucun"],correct:1},
+    {q:"Synonyme de 'maison' ?",opts:["jardin","demeure","route","forêt"],correct:1},
+    {q:"Féminin de 'chanteur' ?",opts:["chanteuse","chanteure","chanteresse","chantrice"],correct:0},
+    {q:"Pluriel de 'travail' ?",opts:["travails","travaux","travailles","travail"],correct:1},
+    {q:"Quel mot rime avec 'soleil' ?",opts:["oreille","maison","forêt","sapin"],correct:0},
+    {q:"'Manger' est un verbe du :",opts:["1er groupe","2e groupe","3e groupe","aucun groupe"],correct:0},
+    {q:"Dans 'La belle endormie', 'belle' est :",opts:["nom","adverbe","adjectif","déterminant"],correct:2},
+    {q:"Quel mot est un homonyme de 'mère' ?",opts:["père","mer","sœur","amie"],correct:1},
+    {q:"Quel est le radical de 'chanter' ?",opts:["chanter","chant","er","chantons"],correct:1},
+    {q:"Passé composé de 'aller', 1ère pers. sing. ?",opts:["j'allais","je suis allé","j'irai","j'allai"],correct:1},
+    {q:"Dans 'Il joue au foot avec ses amis', CC de :",opts:["temps","lieu","manière","accompagnement"],correct:3},
+    {q:"'Finir' est un verbe du :",opts:["1er groupe","2e groupe","3e groupe","aucun"],correct:1},
+    {q:"Quel mot est un article défini ?",opts:["un","le","des","mon"],correct:1},
+    {q:"Antonyme de 'rapide' ?",opts:["vif","lent","fort","grand"],correct:1},
+    {q:"Pluriel de 'pneu' ?",opts:["pneux","pneus","pneumatiques","pneues"],correct:1}
   ],
   maths:[
-    {q:"Combien font 47 + 35 ?",opts:["72","82","81","73"],correct:1},
-    {q:"Quelle est la moitié de 48 ?",opts:["22","24","26","20"],correct:1},
-    {q:"Combien font 9 × 7 ?",opts:["54","56","63","72"],correct:2},
+    {q:"47 + 35 = ?",opts:["72","82","81","73"],correct:1},
+    {q:"Moitié de 48 ?",opts:["22","24","26","20"],correct:1},
+    {q:"9 × 7 = ?",opts:["54","56","63","72"],correct:2},
     {q:"64 ÷ 8 = ?",opts:["6","7","8","9"],correct:2},
-    {q:"Quel nombre vient après 99 ?",opts:["100","98","101","90"],correct:0},
-    {q:"Quelle est l'heure sur une horloge qui indique 14h30 ?",opts:["2h30 du matin","2h30 de l'après-midi","3h30","1h30"],correct:1},
-    {q:"Quel est le périmètre d'un carré de côté 5cm ?",opts:["10cm","15cm","20cm","25cm"],correct:2},
+    {q:"Nombre après 99 ?",opts:["100","98","101","90"],correct:0},
+    {q:"Périmètre d'un carré de côté 5cm ?",opts:["10cm","15cm","20cm","25cm"],correct:2},
     {q:"3/4 de 20 = ?",opts:["12","15","10","18"],correct:1},
-    {q:"Convertis 3km en mètres",opts:["300m","3000m","30m","30000m"],correct:1},
-    {q:"Quelle est l'aire d'un rectangle 4cm × 6cm ?",opts:["20cm²","24cm²","10cm²","12cm²"],correct:1},
-    {q:"Combien font 125 - 48 ?",opts:["67","77","87","57"],correct:1},
-    {q:"Quel nombre est le plus grand : 0,5 ou 0,45 ?",opts:["0,45","0,5","égaux","impossible"],correct:1}
+    {q:"3km = ? mètres",opts:["300m","3000m","30m","30000m"],correct:1},
+    {q:"Aire d'un rectangle 4cm × 6cm ?",opts:["20cm²","24cm²","10cm²","12cm²"],correct:1},
+    {q:"125 - 48 = ?",opts:["67","77","87","57"],correct:1},
+    {q:"Le plus grand : 0,5 ou 0,45 ?",opts:["0,45","0,5","égaux","impossible"],correct:1},
+    {q:"Heure sur une horloge à 14h30 ?",opts:["2h30 matin","2h30 après-midi","3h30","1h30"],correct:1},
+    {q:"6 × 8 = ?",opts:["42","48","54","56"],correct:1},
+    {q:"72 ÷ 9 = ?",opts:["7","8","9","6"],correct:1},
+    {q:"Converti 2,5 km en m ?",opts:["25m","250m","2500m","25000m"],correct:2},
+    {q:"Quel nombre est entre 3,5 et 4 ?",opts:["3,2","3,7","4,1","2,9"],correct:1},
+    {q:"250 + 375 = ?",opts:["515","525","625","615"],correct:2},
+    {q:"Combien de cm dans 1,5 m ?",opts:["15cm","150cm","1500cm","0,15cm"],correct:1},
+    {q:"Le tiers de 27 ?",opts:["7","9","8","6"],correct:1},
+    {q:"5² = ?",opts:["10","15","25","20"],correct:2},
+    {q:"Périmètre rectangle 8cm × 3cm ?",opts:["24cm","22cm","11cm","44cm"],correct:1},
+    {q:"100 - 37 = ?",opts:["63","67","53","73"],correct:0},
+    {q:"7 × 6 = ?",opts:["36","42","48","56"],correct:1},
+    {q:"Aire carré côté 7cm ?",opts:["28cm²","49cm²","14cm²","21cm²"],correct:1},
+    {q:"1/2 de 1 km = ?",opts:["500m","250m","100m","5000m"],correct:0},
+    {q:"45 ÷ 5 = ?",opts:["7","8","9","10"],correct:2},
+    {q:"8 × 9 = ?",opts:["72","81","63","56"],correct:0},
+    {q:"Lequel est impair ?",opts:["12","24","37","50"],correct:2},
+    {q:"0,1 + 0,9 = ?",opts:["0,10","1","1,9","10"],correct:1},
+    {q:"Quel est le double de 17 ?",opts:["24","34","28","36"],correct:1},
+    {q:"Combien de mm dans 3cm ?",opts:["3mm","30mm","300mm","0,3mm"],correct:1},
+    {q:"4/4 = ?",opts:["0","1","4","2"],correct:1},
+    {q:"Lequel est un multiple de 6 ?",opts:["14","22","36","44"],correct:2},
+    {q:"200 × 5 = ?",opts:["100","500","1000","10000"],correct:2},
+    {q:"Le quart de 100 ?",opts:["20","25","50","40"],correct:1},
+    {q:"Quel nombre est divisible par 3 et par 4 ?",opts:["10","14","24","22"],correct:2},
+    {q:"3 × 4 × 2 = ?",opts:["12","18","24","36"],correct:2},
+    {q:"999 + 1 = ?",opts:["1000","999","9991","100"],correct:0},
+    {q:"Périmètre triangle équilatéral côté 6cm ?",opts:["12cm","18cm","24cm","36cm"],correct:1},
+    {q:"Combien de g dans 1,5 kg ?",opts:["150g","1500g","15000g","15g"],correct:1}
   ]
 },
+
 
 CM1:{
   francais:[
-    {q:"Dans 'Il court vite', 'vite' est :",opts:["un adjectif","un adverbe","un nom","un verbe"],correct:1},
-    {q:"Quel est le COI dans : 'Il parle à son ami.' ?",opts:["Il","parle","à son ami","aucun"],correct:2},
+    {q:"Le COI dans : 'Il parle à son ami.' ?",opts:["Il","parle","à son ami","aucun"],correct:2},
     {q:"Conjugue 'finir' au passé composé, 1ère pers. sing.",opts:["je finissais","j'ai fini","je finis","je finissais"],correct:1},
-    {q:"Quel est le sujet réel de 'Il est arrivé un train.' ?",opts:["Il","est","un train","arrivé"],correct:2},
     {q:"Quel est le sens figuré de 'avoir le cafard' ?",opts:["avoir un insecte","être triste","avoir faim","être fatigué"],correct:1},
-    {q:"Quel mot est un homonyme de 'ver' ?",opts:["verre","air","mer","sel"],correct:0},
-    {q:"Accord dans 'Les roses sont belles.' : 'belles' est :",opts:["féminin singulier","féminin pluriel","masculin pluriel","masculin singulier"],correct:1},
-    {q:"Quelle figure de style : 'Il pleut des cordes.'",opts:["comparaison","métaphore","hyperbole","litote"],correct:1},
-    {q:"Quel mode est utilisé dans : 'Viens ici !'",opts:["indicatif","subjonctif","impératif","infinitif"],correct:2},
-    {q:"Quel est le préfixe dans 'impossible' ?",opts:["im","possible","im-","ible"],correct:0},
-    {q:"Quel est le suffixe dans 'boulangerie' ?",opts:["boulang","-erie","boulanger","boulan"],correct:1},
-    {q:"'Nonobstant' signifie :",opts:["donc","cependant","parce que","et"],correct:1}
+    {q:"Quel mode : 'Viens ici !' ?",opts:["indicatif","subjonctif","impératif","infinitif"],correct:2},
+    {q:"Préfixe dans 'impossible' ?",opts:["im-","possible","im","ible"],correct:0},
+    {q:"Suffixe dans 'boulangerie' ?",opts:["boulang","-erie","boulanger","boulan"],correct:1},
+    {q:"'Nonobstant' signifie ?",opts:["donc","cependant","parce que","et"],correct:1},
+    {q:"Quel est le sujet réel de 'Il est arrivé un train.' ?",opts:["Il","est","un train","arrivé"],correct:2},
+    {q:"Quel est l'homonyme de 'ver' ?",opts:["verre","air","mer","sel"],correct:0},
+    {q:"'belles' dans 'Les roses sont belles.' est :",opts:["féminin singulier","féminin pluriel","masculin pluriel","masculin singulier"],correct:1},
+    {q:"Figure de style : 'Il pleut des cordes.' ?",opts:["comparaison","métaphore","hyperbole","litote"],correct:1},
+    {q:"Quel temps : 'je mangeais' ?",opts:["présent","imparfait","passé composé","futur"],correct:1},
+    {q:"Passé simple de 'venir', 3ème pers. sing. ?",opts:["vint","venait","est venu","viendra"],correct:0},
+    {q:"Quel est le pluriel de 'bal' ?",opts:["bals","baux","bales","balles"],correct:0},
+    {q:"Quelle est la nature de 'bien' dans 'il mange bien' ?",opts:["adjectif","nom","adverbe","verbe"],correct:2},
+    {q:"Quel temps exprime : 'quand il sera arrivé' ?",opts:["futur simple","futur antérieur","présent","passé composé"],correct:1},
+    {q:"Quel est le radical de 'courageux' ?",opts:["coura","courage","geux","courageux"],correct:1},
+    {q:"Proposition subordonnée de cause : laquelle ?",opts:["pour que","parce que","bien que","de sorte que"],correct:1},
+    {q:"Quel est le genre de 'après-midi' ?",opts:["toujours masculin","toujours féminin","les deux","aucun des deux"],correct:2},
+    {q:"Dans 'Il chante faux', 'faux' est :",opts:["adjectif","adverbe","nom","verbe"],correct:1},
+    {q:"Quel est le complément du nom dans 'la maison de pierre' ?",opts:["la maison","de pierre","pierre","aucun"],correct:1},
+    {q:"Accord de 'tout' dans 'elles sont toutes là' ?",opts:["invariable","accord féminin pluriel","accord masculin pluriel","au choix"],correct:1},
+    {q:"Quel est le temps de 'il avait mangé' ?",opts:["imparfait","plus-que-parfait","passé composé","passé antérieur"],correct:1},
+    {q:"Mot invariable parmi : ?",opts:["beau","souvent","grand","vieux"],correct:1},
+    {q:"Quel est le complément circonstanciel de temps dans : 'Hier, il est venu.'",opts:["il","est venu","Hier","aucun"],correct:2},
+    {q:"Quel registre de langue : 'C'est super cool !' ?",opts:["soutenu","courant","familier","argotique"],correct:2},
+    {q:"'Désormais' est un :",opts:["adjectif","adverbe de temps","nom","verbe"],correct:1},
+    {q:"Dans 'Jean et Marie chantent', le sujet est :",opts:["Jean","Marie","Jean et Marie","chantent"],correct:2},
+    {q:"Pluriel de 'oeil' ?",opts:["oeils","yeux","oeilx","oeilles"],correct:1},
+    {q:"Quel est le participe passé de 'prendre' ?",opts:["prenu","pris","prend","prendu"],correct:1},
+    {q:"Quel est l'antonyme de 'vaillant' ?",opts:["brave","courageux","lâche","fort"],correct:2},
+    {q:"Dans 'Il fait beau', le sujet 'il' est :",opts:["un pronom personnel","un sujet réel","un sujet apparent","un pronom démonstratif"],correct:2},
+    {q:"Quelle est la forme passive de 'Le chat mange la souris.' ?",opts:["La souris mange le chat","La souris est mangée par le chat","Le chat est mangé","La souris a été mangée"],correct:1},
+    {q:"Quel mot est un synonyme de 'aider' ?",opts:["gêner","secourir","refuser","ignorer"],correct:1},
+    {q:"'Se souvenir' est un verbe :",opts:["du 1er groupe","du 2e groupe","du 3e groupe","défectif"],correct:2},
+    {q:"Dans quelle phrase y a-t-il un attribut du sujet ?",opts:["Il mange vite","Il est médecin","Il parle à Marie","Il court"],correct:1},
+    {q:"Quel est le participe présent de 'finir' ?",opts:["fini","finissant","finissait","finira"],correct:1},
+    {q:"'Malgré' introduit :",opts:["la cause","l'opposition","le but","la condition"],correct:1},
+    {q:"Dans 'Elle lui a donné un livre', 'lui' est :",opts:["COD","COI","sujet","attribut"],correct:1},
+    {q:"Quel est le pluriel de 'festival' ?",opts:["festivals","festivaux","festivalles","festival"],correct:0}
   ],
   maths:[
-    {q:"Quelle est la valeur de 5³ ?",opts:["15","125","25","50"],correct:1},
+    {q:"5³ = ?",opts:["15","125","25","50"],correct:1},
     {q:"PGCD de 12 et 18 ?",opts:["2","3","6","9"],correct:2},
     {q:"0,75 × 4 = ?",opts:["2","3","4","0,3"],correct:1},
     {q:"Convertis 2h45 en minutes",opts:["125min","145min","165min","175min"],correct:2},
-    {q:"Quel est le volume d'un cube de côté 3cm ?",opts:["9cm³","18cm³","27cm³","27cm²"],correct:2},
-    {q:"Encadre √50 entre deux entiers consécutifs",opts:["6 et 7","7 et 8","5 et 6","8 et 9"],correct:1},
-    {q:"Quelle fraction est équivalente à 3/4 ?",opts:["6/9","9/12","6/8","4/5"],correct:2},
-    {q:"Calcule 20% de 150",opts:["20","25","30","35"],correct:2},
-    {q:"Quel est le périmètre d'un triangle équilatéral de côté 7cm ?",opts:["14cm","21cm","49cm","28cm"],correct:1},
-    {q:"Convertis 3,5 km en m",opts:["350m","3500m","35000m","35m"],correct:1},
-    {q:"Combien font (3+4) × (5-2) ?",opts:["14","21","26","17"],correct:1},
-    {q:"Quelle est la médiane de : 3, 5, 7, 9, 11 ?",opts:["5","7","9","6"],correct:1}
+    {q:"Volume d'un cube de côté 3cm ?",opts:["9cm³","18cm³","27cm³","27cm²"],correct:2},
+    {q:"Encadre √50 entre deux entiers",opts:["6 et 7","7 et 8","5 et 6","8 et 9"],correct:1},
+    {q:"Fraction équivalente à 3/4 ?",opts:["6/9","9/12","6/8","4/5"],correct:2},
+    {q:"20% de 150 ?",opts:["20","25","30","35"],correct:2},
+    {q:"Périmètre triangle équilatéral côté 7cm ?",opts:["14cm","21cm","49cm","28cm"],correct:1},
+    {q:"(3+4) × (5-2) = ?",opts:["14","21","26","17"],correct:1},
+    {q:"Médiane de : 3,5,7,9,11 ?",opts:["5","7","9","6"],correct:1},
+    {q:"2,5 × 4 = ?",opts:["6","8","10","12"],correct:2},
+    {q:"Quel est le double de 13,5 ?",opts:["26","27","28","25"],correct:1},
+    {q:"Convertis 4500m en km ?",opts:["450km","45km","4,5km","0,45km"],correct:2},
+    {q:"Quelle fraction est la plus grande : 2/3 ou 3/4 ?",opts:["2/3","3/4","égales","impossible"],correct:1},
+    {q:"Aire triangle base 6cm hauteur 4cm ?",opts:["24cm²","12cm²","10cm²","48cm²"],correct:1},
+    {q:"Lequel est un nombre premier ?",opts:["9","15","17","21"],correct:2},
+    {q:"3/5 + 1/5 = ?",opts:["4/10","4/5","2/5","4/25"],correct:1},
+    {q:"Combien de diagonales a un rectangle ?",opts:["0","1","2","4"],correct:2},
+    {q:"1000 ÷ 25 = ?",opts:["25","40","50","4"],correct:1},
+    {q:"Calcul : 4² + 3² = ?",opts:["49","25","14","7"],correct:1},
+    {q:"Convertis 3,2 L en cL ?",opts:["32cL","320cL","3200cL","0,32cL"],correct:1},
+    {q:"Quelle est l'aire d'un carré de périmètre 20cm ?",opts:["16cm²","25cm²","100cm²","400cm²"],correct:1},
+    {q:"Calcul : (12 + 8) × 3 - 5 = ?",opts:["55","60","65","70"],correct:0},
+    {q:"Quel est le quotient et reste de 23 ÷ 4 ?",opts:["q=5 r=3","q=6 r=1","q=5 r=2","q=4 r=3"],correct:0},
+    {q:"Combien de faces a une pyramide à base carrée ?",opts:["4","5","6","8"],correct:1},
+    {q:"3/4 de 60 = ?",opts:["30","40","45","50"],correct:2},
+    {q:"Lequel est un multiple de 7 ?",opts:["25","42","50","55"],correct:1},
+    {q:"Convertis 2h15min en minutes ?",opts:["115min","125min","135min","145min"],correct:2},
+    {q:"Quelle est la valeur de x si 3x = 21 ?",opts:["x=6","x=7","x=8","x=9"],correct:1},
+    {q:"Périmètre d'un hexagone régulier de côté 4cm ?",opts:["20cm","24cm","28cm","32cm"],correct:1},
+    {q:"Calcul : 1000 - 247 = ?",opts:["743","753","763","773"],correct:1},
+    {q:"Quel est le PPCM de 4 et 6 ?",opts:["2","12","24","4"],correct:1},
+    {q:"Convertis 2,5 heures en minutes ?",opts:["120min","150min","140min","160min"],correct:1},
+    {q:"Quelle est l'aire d'un rectangle 12cm × 7cm ?",opts:["84cm²","38cm²","96cm²","74cm²"],correct:0},
+    {q:"Calcul : 0,5 + 0,25 + 0,125 = ?",opts:["0,725","0,875","0,625","0,75"],correct:1},
+    {q:"Lequel est divisible par 9 ?",opts:["72","75","80","85"],correct:0},
+    {q:"Volume d'un pavé 5×3×4cm ?",opts:["47cm³","60cm³","24cm³","120cm³"],correct:1},
+    {q:"Résous : x + 15 = 32",opts:["x=15","x=17","x=47","x=13"],correct:1},
+    {q:"Calcul : 25% de 80 = ?",opts:["15","20","25","30"],correct:1}
   ]
 },
 
+
 CINQUIEME:{
   francais:[
-    {q:"Quel est le registre du Roman de Renart ?",opts:["tragique","épique","satirique","lyrique"],correct:2},
-    {q:"Dans 'qu'il vienne', quel mode ?",opts:["indicatif","subjonctif","conditionnel","impératif"],correct:1},
-    {q:"Qu'est-ce qu'une antithèse ?",opts:["répétition","opposition de deux idées","comparaison","question"],correct:1},
-    {q:"Quel temps : 'il eut fini' ?",opts:["passé simple","passé antérieur","plus-que-parfait","futur antérieur"],correct:1},
-    {q:"La phrase 'Cette maison est une prison' est une :",opts:["comparaison","métaphore","hyperbole","litote"],correct:1},
-    {q:"Quel est le COD dans : 'Il aime la musique.' ?",opts:["Il","aime","la musique","aucun"],correct:2},
-    {q:"Quel est le temps de 'il finissait' ?",opts:["présent","imparfait","futur","passé composé"],correct:1},
-    {q:"Qu'est-ce qu'une proposition subordonnée relative ?",opts:["complète le verbe","qualifie un nom","exprime le but","exprime la cause"],correct:1},
-    {q:"Dans 'bien que + subjonctif', quelle relation ?",opts:["cause","opposition","conséquence","but"],correct:1},
-    {q:"Qu'est-ce que la narration à la 1ère personne ?",opts:["narrateur extérieur","narrateur personnage","narrateur omniscient","aucun"],correct:1},
-    {q:"Quel écrivain a écrit 'Tristan et Iseut' (adaptation) ?",opts:["Molière","Béroul","Racine","Hugo"],correct:1},
-    {q:"Une 'litote' consiste à :",opts:["exagérer","dire moins pour suggérer plus","comparer","répéter"],correct:1}
+    {q:"Registre du Roman de Renart ?",opts:["tragique","épique","satirique","lyrique"],correct:2},
+    {q:"Mode dans 'qu'il vienne' ?",opts:["indicatif","subjonctif","conditionnel","impératif"],correct:1},
+    {q:"Antithèse = ?",opts:["répétition","opposition de deux idées","comparaison","question"],correct:1},
+    {q:"Temps : 'il eut fini' ?",opts:["passé simple","passé antérieur","plus-que-parfait","futur antérieur"],correct:1},
+    {q:"'Cette maison est une prison' : figure de style ?",opts:["comparaison","métaphore","hyperbole","litote"],correct:1},
+    {q:"Temps de 'il finissait' ?",opts:["présent","imparfait","futur","passé composé"],correct:1},
+    {q:"Proposition subordonnée relative : elle ___",opts:["complète le verbe","qualifie un nom","exprime le but","exprime la cause"],correct:1},
+    {q:"'Bien que + subjonctif' exprime :",opts:["cause","opposition","conséquence","but"],correct:1},
+    {q:"Narration à la 1ère personne : narrateur ___",opts:["extérieur","personnage","omniscient","aucun"],correct:1},
+    {q:"Écrivain de 'Tristan et Iseut' (adaptation médiévale) ?",opts:["Molière","Béroul","Racine","Hugo"],correct:1},
+    {q:"'Litote' = dire ___",opts:["exagérer","moins pour suggérer plus","comparer","répéter"],correct:1},
+    {q:"Temps de 'nous avions fini' ?",opts:["passé composé","imparfait","plus-que-parfait","passé antérieur"],correct:2},
+    {q:"Quel auteur a écrit des fables au XVIIe siècle ?",opts:["Molière","La Fontaine","Racine","Corneille"],correct:1},
+    {q:"'Périr' est un verbe du :",opts:["1er groupe","2e groupe","3e groupe","défectif"],correct:1},
+    {q:"Figure de style : 'Il est fort comme un lion.' ?",opts:["métaphore","comparaison","hyperbole","antithèse"],correct:1},
+    {q:"'Nonobstant ses défauts, il est aimé.' 'nonobstant' exprime :",opts:["cause","opposition","conséquence","temps"],correct:1},
+    {q:"Quel est le participe passé de 'naître' ?",opts:["né","nait","naissant","naissé"],correct:0},
+    {q:"Dans 'Il parle comme un livre', la comparaison porte sur :",opts:["la vitesse","le contenu","la façon de parler","le volume"],correct:2},
+    {q:"Mode et temps de 'il aurait pu' ?",opts:["conditionnel présent","conditionnel passé","indicatif passé","subjonctif"],correct:1},
+    {q:"'Amphigouri' désigne :",opts:["un discours clair","un discours confus et absurde","un poème épique","une figure de style"],correct:1},
+    {q:"Quel mouvement littéraire correspond aux fabliaux du Moyen Âge ?",opts:["Classicisme","Littérature médiévale","Romantisme","Réalisme"],correct:1},
+    {q:"Dans une phrase, l'attribut du sujet est relié par :",opts:["un verbe d'action","un verbe d'état","une préposition","un adverbe"],correct:1},
+    {q:"'Bref' dans 'Bref, il est parti.' est :",opts:["adjectif","adverbe","nom","verbe"],correct:1},
+    {q:"Quel est le COD dans : 'Elle chante une chanson.' ?",opts:["Elle","chante","une chanson","aucun"],correct:2},
+    {q:"Quel temps : 'dès qu'il aura fini, il partira' (1er verbe) ?",opts:["futur simple","futur antérieur","présent","conditionnel"],correct:1},
+    {q:"'Assonance' = répétition de la même :",opts:["consonne","voyelle","syllabe","figure de style"],correct:1},
+    {q:"Quel est l'imparfait de 'être', 3e pers. sing. ?",opts:["est","était","sera","soit"],correct:1},
+    {q:"Type de récit où un objet parle à la 1ère personne ?",opts:["autobiographie","récit à la 1ère personne non humaine","journal intime","lettre"],correct:1},
+    {q:"'Quoique' suivi du :",opts:["indicatif","subjonctif","conditionnel","infinitif"],correct:1},
+    {q:"Quel est le pluriel de 'bal' ?",opts:["bals","baux","bales","balles"],correct:0},
+    {q:"'Cependant' exprime :",opts:["cause","opposition","but","temps"],correct:1},
+    {q:"Futur simple de 'aller', 1ère pers. plur. ?",opts:["nous allons","nous irons","nous allions","nous sommes allés"],correct:1},
+    {q:"Qu'est-ce qu'un 'oxymore' ?",opts:["répétition","association de termes contradictoires","question rhétorique","énumération"],correct:1},
+    {q:"Quel est le complément du nom dans 'la maison de campagne' ?",opts:["la maison","de campagne","campagne","aucun"],correct:1},
+    {q:"Dans une biographie, qui est le narrateur ?",opts:["le personnage lui-même","quelqu'un d'autre","un personnage fictif","aucun"],correct:1},
+    {q:"'Afin de' suivi de :",opts:["l'indicatif","l'infinitif","le subjonctif","l'impératif"],correct:1},
+    {q:"Quel est le conditionnel présent de 'pouvoir', 1ère pers. sing. ?",opts:["je peux","je pourrai","je pourrais","je pouvais"],correct:2},
+    {q:"Qu'est-ce qu'une 'ellipse narrative' ?",opts:["passage du temps non raconté","flash-back","récit rapide","dialogue"],correct:0},
+    {q:"'Ainsi' en début de phrase exprime :",opts:["cause","conséquence","opposition","temps"],correct:1},
+    {q:"Quel mode dans une proposition de but ?",opts:["indicatif","subjonctif","conditionnel","infinitif"],correct:1}
   ],
   maths:[
     {q:"Simplifie : 15/25",opts:["2/3","3/5","4/5","5/8"],correct:1},
     {q:"(-4) × (-3) = ?",opts:["-12","12","-7","7"],correct:1},
     {q:"Résous : 4x + 8 = 24",opts:["x=3","x=4","x=5","x=6"],correct:1},
-    {q:"Quel est l'angle dans un triangle rectangle en plus du 90° si un angle est 35° ?",opts:["55°","45°","65°","75°"],correct:0},
-    {q:"Quel est le périmètre d'un disque de rayon 5cm (π≈3,14) ?",opts:["15,7cm","31,4cm","78,5cm","25cm"],correct:1},
-    {q:"Calcule 3/4 + 1/3",opts:["4/7","11/12","13/12","1"],correct:2},
+    {q:"Angle d'un triangle rectangle si un angle = 35° ?",opts:["55°","45°","65°","75°"],correct:0},
+    {q:"Périmètre disque rayon 5cm (π≈3,14) ?",opts:["15,7cm","31,4cm","78,5cm","25cm"],correct:1},
+    {q:"3/4 + 1/3 = ?",opts:["4/7","11/12","13/12","1"],correct:2},
     {q:"(-5)² = ?",opts:["-25","25","10","-10"],correct:1},
-    {q:"Quel est le volume d'un pavé 3×4×5 ?",opts:["47","60","24","120"],correct:1},
+    {q:"Volume d'un pavé 3×4×5 ?",opts:["47","60","24","120"],correct:1},
     {q:"Résous : -2x < 6",opts:["x<-3","x>-3","x<3","x>3"],correct:1},
     {q:"Réduis : 3a + 2b - a + 4b",opts:["2a+6b","4a+6b","2a+2b","4a+2b"],correct:0},
-    {q:"Quel est le théorème de Pythagore ?",opts:["a²=b+c","a+b=c","a²=b²+c²","a=b²-c²"],correct:2},
-    {q:"Calcule l'aire d'un disque de rayon 4cm (π≈3,14)",opts:["12,56cm²","25,12cm²","50,24cm²","100,48cm²"],correct:2}
-  ],
-  svt:[
-    {q:"Quelle cellule produit l'insuline ?",opts:["hépatocyte","cellule bêta du pancréas","neurone","globule rouge"],correct:1},
-    {q:"Qu'est-ce que la photosynthèse ?",opts:["respiration des plantes","production de matière organique par la lumière","digestion","reproduction"],correct:1},
-    {q:"Quel organe filtre le sang ?",opts:["foie","cœur","rein","poumon"],correct:2},
-    {q:"Qu'est-ce qu'un être unicellulaire ?",opts:["composé d'une seule cellule","sans cellule","à plusieurs noyaux","végétal"],correct:0},
-    {q:"Qu'est-ce que l'ADN ?",opts:["protéine","support de l'information génétique","lipide","glucide"],correct:1},
-    {q:"Quel est le rôle des poumons ?",opts:["filtrer le sang","digérer","assurer les échanges gazeux","produire des hormones"],correct:2}
+    {q:"Théorème de Pythagore ?",opts:["a²=b+c","a+b=c","a²=b²+c²","a=b²-c²"],correct:2},
+    {q:"Aire disque rayon 4cm (π≈3,14) ?",opts:["12,56cm²","25,12cm²","50,24cm²","100,48cm²"],correct:2},
+    {q:"Calcule : (-6) + 9 = ?",opts:["-3","3","15","-15"],correct:1},
+    {q:"Simplifie : 24/36",opts:["2/3","3/4","4/6","6/9"],correct:0},
+    {q:"Résous : 5x - 3 = 12",opts:["x=2","x=3","x=4","x=5"],correct:1},
+    {q:"Combien de faces a un prisme à base triangulaire ?",opts:["4","5","6","8"],correct:1},
+    {q:"Calcule : (-8) ÷ 2 = ?",opts:["4","-4","16","-16"],correct:1},
+    {q:"Réduire : 2(3x + 4) = ?",opts:["6x+4","6x+8","6x-4","3x+8"],correct:1},
+    {q:"Quelle est la médiane de 4, 7, 9, 12, 15 ?",opts:["7","9","11","10"],correct:1},
+    {q:"Résous : x/3 = 5",opts:["x=3","x=8","x=15","x=2"],correct:2},
+    {q:"Calcule : 2,5² = ?",opts:["5","6,25","12,5","6"],correct:1},
+    {q:"Qu'est-ce que la symétrie centrale ?",opts:["réflexion par rapport à une droite","rotation de 180° autour d'un point","translation","homothétie"],correct:1},
+    {q:"Calcule 3/5 × 10 = ?",opts:["5","6","8","3"],correct:1},
+    {q:"PGCD de 24 et 36 ?",opts:["4","6","12","18"],correct:2},
+    {q:"Résous : 3(x-2) = 9",opts:["x=3","x=4","x=5","x=6"],correct:2},
+    {q:"Calcule : (-3)³ = ?",opts:["9","27","-27","-9"],correct:2},
+    {q:"Quel est le quotient de la division euclidienne de 47 par 6 ?",opts:["5","6","7","8"],correct:2},
+    {q:"Simplifie : (4a² × 3a) = ?",opts:["7a²","12a³","12a²","7a³"],correct:1},
+    {q:"Calcule l'angle manquant d'un triangle isocèle si l'angle au sommet = 40° ?",opts:["40°","70°","80°","50°"],correct:1},
+    {q:"La moyenne de 5, 8, 11, 14 est :",opts:["9","9,5","10","8"],correct:1},
+    {q:"Calcule : 4/5 ÷ 2 = ?",opts:["2/5","8/5","4/10","8/10"],correct:0},
+    {q:"Un carré a tous ses côtés égaux ET :",opts:["4 angles quelconques","4 angles droits","2 diagonales inégales","2 paires de côtés égaux"],correct:1},
+    {q:"Résous : 2x + 5 = x + 11",opts:["x=4","x=6","x=8","x=16"],correct:1},
+    {q:"Calcule : 0,3 × 0,4 = ?",opts:["1,2","0,12","0,012","12"],correct:1},
+    {q:"Le périmètre d'un cercle de diamètre 8cm (π≈3,14) ?",opts:["25,12cm","12,56cm","50,24cm","16cm"],correct:0},
+    {q:"Résous : x² = 16",opts:["x=4","x=-4","x=4 ou x=-4","x=8"],correct:2},
+    {q:"Calcule : 5/6 - 1/3 = ?",opts:["4/6","3/6","1/2","1/6"],correct:1},
+    {q:"Nombre de faces d'un cube ?",opts:["4","6","8","12"],correct:1},
+    {q:"Quel est le développement de (a+b)² ?",opts:["a²+b²","a²+2ab+b²","a²-2ab+b²","(a+b)(a-b)"],correct:1},
+    {q:"Calcule : 12 × 1,5 = ?",opts:["13,5","16","18","15"],correct:2}
   ]
 },
 
+
 SECONDE:{
   francais:[
-    {q:"Qu'est-ce qu'un alexandrin ?",opts:["10 syllabes","12 syllabes","8 syllabes","14 syllabes"],correct:1},
-    {q:"Quel est le thème de la poésie baroque ?",opts:["raison","fuite du temps et mort","nature","amour courtois"],correct:1},
-    {q:"Qu'est-ce que le classicisme au XVIIe siècle ?",opts:["liberté totale","respect des règles et de la raison","romantisme","réalisme"],correct:1},
-    {q:"Molière appartient à quel courant littéraire ?",opts:["baroque","classicisme","romantisme","symbolisme"],correct:1},
-    {q:"Qu'est-ce qu'un texte argumentatif ?",opts:["raconte une histoire","défend une thèse","décrit","explique"],correct:1},
-    {q:"Quel registre dans une tragédie ?",opts:["comique","tragique","lyrique","épique"],correct:1},
-    {q:"Qu'est-ce qu'une anaphore ?",opts:["répétition en fin de vers","répétition en début de vers ou phrase","comparaison","question rhétorique"],correct:1},
-    {q:"Le sonnet est composé de :",opts:["2 quatrains et 2 tercets","3 quatrains","4 strophes de 4 vers","2 tercets"],correct:0},
-    {q:"Qu'est-ce que le point de vue omniscient ?",opts:["narrateur sait tout","narrateur est personnage","narrateur observe de l'extérieur","aucun"],correct:0},
-    {q:"Qu'est-ce qu'une périphrase ?",opts:["mot inventé","expression indirecte pour désigner qqch","répétition","opposition"],correct:1},
-    {q:"La Fontaine écrivait surtout des :",opts:["tragédies","fables","romans","poèmes épiques"],correct:1},
-    {q:"Qu'est-ce que le monologue intérieur ?",opts:["dialogue entre deux personnages","pensées d'un personnage exprimées","discours rapporté","narration"],correct:1}
+    {q:"Alexandrin = ? syllabes",opts:["10","12","8","14"],correct:1},
+    {q:"Thème poésie baroque ?",opts:["raison","fuite du temps","nature","amour courtois"],correct:1},
+    {q:"Classicisme XVIIe = ?",opts:["liberté totale","règles et raison","romantisme","réalisme"],correct:1},
+    {q:"Molière = quel courant ?",opts:["baroque","classicisme","romantisme","symbolisme"],correct:1},
+    {q:"Texte argumentatif = ?",opts:["raconte","défend une thèse","décrit","explique"],correct:1},
+    {q:"Registre d'une tragédie ?",opts:["comique","tragique","lyrique","épique"],correct:1},
+    {q:"Anaphore = ?",opts:["répétition fin de vers","répétition début de vers/phrase","comparaison","question"],correct:1},
+    {q:"Sonnet = ?",opts:["2 quatrains + 2 tercets","3 quatrains","4 strophes de 4 vers","2 tercets"],correct:0},
+    {q:"Point de vue omniscient : le narrateur ___",opts:["sait tout","est personnage","observe de l'extérieur","aucun"],correct:0},
+    {q:"La Fontaine écrivait des :",opts:["tragédies","fables","romans","épopées"],correct:1},
+    {q:"Monologue intérieur = ?",opts:["dialogue","pensées d'un personnage","discours rapporté","narration"],correct:1},
+    {q:"'La Princesse de Clèves' est un :",opts:["roman baroque","roman classique","roman réaliste","roman romantique"],correct:1},
+    {q:"Qu'est-ce qu'une chute dans une nouvelle ?",opts:["début","milieu","fin surprenante","personnage"],correct:2},
+    {q:"Corneille est associé à :",opts:["la comédie","la tragédie classique","le romantisme","le symbolisme"],correct:1},
+    {q:"Qu'est-ce qu'une épopée ?",opts:["récit court","long poème narrant les exploits d'un héros","pièce de théâtre","roman policier"],correct:1},
+    {q:"Qu'est-ce que la focalisation interne ?",opts:["narrateur voit tout","narrateur voit autant que le personnage","narrateur voit moins","aucun"],correct:1},
+    {q:"Le Cid de Corneille met en scène un conflit entre :",opts:["amour et devoir","bien et mal","riches et pauvres","vie et mort"],correct:0},
+    {q:"Périphrase pour 'le soleil' ?",opts:["l'astre du jour","l'étoile","le disque","la lumière"],correct:0},
+    {q:"Qu'est-ce que le théâtre classique impose comme règle ?",opts:["3 jours, 3 lieux, 3 actions","unité de temps, lieu, action","liberté totale","aucune règle"],correct:1},
+    {q:"'Le Misanthrope' de Molière critique :",opts:["les valets","la noblesse hypocrite","les femmes savantes","le roi"],correct:1},
+    {q:"Quel est le but de la satire ?",opts:["émouvoir","critiquer en ridiculisant","informer","raconter"],correct:1},
+    {q:"Qu'est-ce qu'un didascalie dans une pièce ?",opts:["un personnage","une indication scénique","un dialogue","un monologue"],correct:1},
+    {q:"'Tartuffe' de Molière dénonce :",opts:["la jalousie","l'hypocrisie religieuse","la pauvreté","la guerre"],correct:1},
+    {q:"Qu'est-ce qu'une allégorie ?",opts:["figure qui exagère","représentation d'une idée abstraite par une image concrète","répétition","silence"],correct:1},
+    {q:"La 'vraisemblance' au théâtre classique signifie :",opts:["tout est vrai","l'action doit paraître crédible","aucune règle","liberté totale"],correct:1},
+    {q:"Racine appartient à quel courant ?",opts:["baroque","classicisme","romantisme","réalisme"],correct:1},
+    {q:"Qu'est-ce qu'une anacoluthe ?",opts:["figure de répétition","rupture de construction grammaticale","question rhétorique","comparaison"],correct:1},
+    {q:"Quel est l'effet de l'ironie ?",opts:["émouvoir","dire le contraire de ce qu'on pense","décrire","raconter"],correct:1},
+    {q:"Dans 'Phèdre' de Racine, le héros est :",opts:["Phèdre","Hippolyte","Thésée","Aricie"],correct:0},
+    {q:"Le 'deus ex machina' est :",opts:["un dieu sur scène","un personnage qui résout tout artificiellement","un monologue final","un décor"],correct:1},
+    {q:"Qu'est-ce que la 'catharsis' selon Aristote ?",opts:["plaisir pur","purification des passions par la tragédie","décor de scène","comédie"],correct:1},
+    {q:"'Bienséance' au théâtre classique = ?",opts:["être toujours vrai","ne rien montrer de choquant sur scène","liberté de jeu","décor réaliste"],correct:1},
+    {q:"Qui a théorisé les règles du théâtre classique ?",opts:["Molière","Aristote","Boileau","Racine"],correct:2},
+    {q:"Qu'est-ce qu'un hémistiche ?",opts:["un vers de 6 pieds","une moitié d'alexandrin","une strophe","un refrain"],correct:1},
+    {q:"La 'protase' dans une pièce classique correspond à :",opts:["l'exposé de la situation","le nœud","le dénouement","le monologue"],correct:0},
+    {q:"'Zaïre' de Voltaire est une :",opts:["comédie","tragédie","farce","épopée"],correct:1},
+    {q:"Qu'est-ce que l'hyperbole ?",opts:["atténuation","exagération","comparaison","répétition"],correct:1},
+    {q:"Dans une pièce classique, le 'dénouement' :",opts:["ouvre l'action","résout le conflit","présente les personnages","est le début"],correct:1},
+    {q:"'Amphitryon' est une pièce de :",opts:["Racine","Corneille","Molière","Marivaux"],correct:2},
+    {q:"Quel registre domine dans 'L'École des femmes' de Molière ?",opts:["tragique","comique","lyrique","épique"],correct:1}
   ],
   maths:[
-    {q:"f(x) = 2x² - 3x + 1 : quelle est f(2) ?",opts:["2","3","4","5"],correct:1},
-    {q:"Résous : x² - 4 = 0",opts:["x=2","x=-2","x=2 ou x=-2","x=4"],correct:2},
-    {q:"Quelle est la pente de la droite y = 3x - 5 ?",opts:["3","-5","5","-3"],correct:0},
-    {q:"Calcule le discriminant de x² - 5x + 6",opts:["1","25","1","11"],correct:0},
-    {q:"Le vecteur AB a pour coordonnées (4,-3). Sa norme est :",opts:["5","7","1","25"],correct:0},
-    {q:"Quel est l'ensemble de définition de f(x) = 1/x ?",opts:["ℝ","ℝ\\{0}","ℝ+","ℝ-"],correct:1},
+    {q:"f(x)=2x²-3x+1, f(2)=?",opts:["2","3","4","5"],correct:1},
+    {q:"x²-4=0, solutions ?",opts:["x=2","x=-2","x=2 ou x=-2","x=4"],correct:2},
+    {q:"Pente de y=3x-5 ?",opts:["3","-5","5","-3"],correct:0},
+    {q:"Discriminant de x²-5x+6 ?",opts:["1","25","11","-1"],correct:0},
+    {q:"Norme du vecteur (4,-3) ?",opts:["5","7","1","25"],correct:0},
+    {q:"Ensemble de définition de f(x)=1/x ?",opts:["R","R sauf {0}","R+","R-"],correct:1},
     {q:"cos(0°) = ?",opts:["0","1","-1","0,5"],correct:1},
-    {q:"Si f est croissante sur [a,b] et a < b, alors :",opts:["f(a)>f(b)","f(a)<f(b)","f(a)=f(b)","impossible à dire"],correct:1},
-    {q:"Quelle est la forme factorisée de x²-9 ?",opts:["(x-3)²","(x+3)(x-3)","(x-9)(x+1)","x(x-9)"],correct:1},
-    {q:"P(A∪B) = P(A) + P(B) - P(A∩B) est :",opts:["formule de Bayes","formule des probabilités totales","formule de l'addition","formule du complémentaire"],correct:2},
-    {q:"La médiane d'une série est :",opts:["la valeur la plus fréquente","la valeur centrale","la moyenne","la somme divisée par 2"],correct:1},
-    {q:"sin²(x) + cos²(x) = ?",opts:["0","1","2","sin(2x)"],correct:1}
+    {q:"Forme factorisée de x²-9 ?",opts:["(x-3)²","(x+3)(x-3)","(x-9)(x+1)","x(x-9)"],correct:1},
+    {q:"sin²(x)+cos²(x) = ?",opts:["0","1","2","sin(2x)"],correct:1},
+    {q:"Médiane = ?",opts:["valeur la plus fréquente","valeur centrale","moyenne","total/2"],correct:1},
+    {q:"Forme canonique de x²+4x+3 ?",opts:["(x+2)²-1","(x+2)²+1","(x-2)²-1","(x+1)²+2"],correct:0},
+    {q:"Résous : 2x²-8=0",opts:["x=2","x=-2","x=2 ou x=-2","x=4"],correct:2},
+    {q:"sin(30°) = ?",opts:["1","0,5","√3/2","√2/2"],correct:1},
+    {q:"Coefficient directeur de la droite passant par (0,2) et (3,8) ?",opts:["2","3","4","6"],correct:0},
+    {q:"Résous : x²-6x+9=0",opts:["x=3","x=-3","x=3 ou x=-3","pas de solution"],correct:0},
+    {q:"P(A)=0,4 et P(B)=0,3, P(A inter B)=0,1 ; P(A union B)=?",opts:["0,5","0,6","0,7","0,8"],correct:1},
+    {q:"L'ordonnée à l'origine de y=5x-7 est :",opts:["5","-7","7","-5"],correct:1},
+    {q:"Combien de solutions si Δ<0 ?",opts:["2","1","0","infini"],correct:2},
+    {q:"f est décroissante signifie : si a<b alors :",opts:["f(a)<f(b)","f(a)>f(b)","f(a)=f(b)","impossible"],correct:1},
+    {q:"tan(45°) = ?",opts:["0","1","√2","√3/2"],correct:1},
+    {q:"Racines de x²-x-6=0 ?",opts:["x=3 ou x=-2","x=-3 ou x=2","x=2 ou x=3","x=-2 ou x=-3"],correct:0},
+    {q:"Quel est le signe de x²+1 pour tout réel x ?",opts:["toujours positif","toujours négatif","nul en x=0","positif pour x>0"],correct:0},
+    {q:"Vecteur nul : ses coordonnées sont :",opts:["(0,0)","(1,1)","(1,0)","quelconques"],correct:0},
+    {q:"Résous : |x-3|=5",opts:["x=8","x=-2","x=8 ou x=-2","x=2 ou x=-8"],correct:2},
+    {q:"L'espérance d'un événement de probabilité p dans n épreuves est :",opts:["n×p","n/p","p/n","n+p"],correct:0},
+    {q:"Intervalle de confiance : plus l'échantillon est grand, plus l'intervalle est :",opts:["grand","petit","identique","variable"],correct:1},
+    {q:"Résous x²+2x-3>0",opts:["x<-3 ou x>1","x>-3 et x<1","-3<x<1","x<-1 ou x>3"],correct:0},
+    {q:"Le milieu de A(2,4) et B(6,8) est :",opts:["(4,6)","(8,12)","(2,2)","(3,5)"],correct:0},
+    {q:"Résous : log(x)=2 (log en base 10)",opts:["x=20","x=100","x=10","x=1000"],correct:1},
+    {q:"Quel est le sens de variation de f(x)=-x²+2x sur [0,1] ?",opts:["décroissant","croissant","constant","non défini"],correct:1},
+    {q:"P(A/B) = P(A inter B)/P(B) est la formule de :",opts:["probabilités totales","probabilité conditionnelle","Bayes","complémentaire"],correct:1},
+    {q:"Résous : 3x-7>2x+1",opts:["x>6","x>8","x<8","x<6"],correct:1},
+    {q:"Quel est le sommet de la parabole y=(x-2)²+3 ?",opts:["(2,3)","(-2,3)","(2,-3)","(-2,-3)"],correct:0},
+    {q:"f(x)=x³ est :",opts:["paire","impaire","ni l'un ni l'autre","constante"],correct:1},
+    {q:"La droite y=k (k constante) est :",opts:["verticale","horizontale","oblique","courbe"],correct:1},
+    {q:"Résous : x²-4x+4=0",opts:["x=2","x=-2","x=2 ou x=-2","pas de solution"],correct:0},
+    {q:"Calcule f(-1) pour f(x)=3x²-2x+1",opts:["4","6","2","0"],correct:1},
+    {q:"L'ensemble des solutions de x²>=0 est :",opts:["R+","R-","R","vide"],correct:2},
+    {q:"Quelle est la racine carrée de 144 ?",opts:["11","12","13","14"],correct:1},
+    {q:"Si f est paire alors f(-x) = ?",opts:["f(x)","-f(x)","0","1"],correct:0}
   ]
 }
 };
 
-// ─── Résolveur enrichi ──────────────────────────────────────────────
-// Combine la banque de base + les questions étendues
 function getFullQBank(levelKey, subject){
   var lc=getLevelContent(levelKey);
-  var base=(lc.bank && lc.bank[subject])?lc.bank[subject]:[];
-  var ext=(QBANK_EXT[levelKey] && QBANK_EXT[levelKey][subject])?QBANK_EXT[levelKey][subject]:[];
-  return base.concat(ext);
+  var base=(lc.bank&&lc.bank[subject])?lc.bank[subject]:[];
+  var ext=(QBANK_EXT[levelKey]&&QBANK_EXT[levelKey][subject])?QBANK_EXT[levelKey][subject]:[];
+  // Dédoublonner par texte de question
+  var seen={};
+  var combined=[];
+  base.concat(ext).forEach(function(q){
+    var key=q.q||q.question||'';
+    if(!seen[key]){ seen[key]=true; combined.push(q); }
+  });
+  return combined;
 }
+
+
+// Tracker les questions vues dans la session courante
+var SESSION_SEEN_QUESTIONS = {};
+
+function pickUnique(bank, n, sessionKey){
+  if(!SESSION_SEEN_QUESTIONS[sessionKey]) SESSION_SEEN_QUESTIONS[sessionKey]=[];
+  var seen=SESSION_SEEN_QUESTIONS[sessionKey];
+  // Filtrer les questions déjà vues
+  var fresh=bank.filter(function(q){
+    var k=q.q||q.question||'';
+    return seen.indexOf(k)<0;
+  });
+  // Si pas assez de fraîches, réinitialiser partiellement
+  if(fresh.length<n){
+    seen.splice(0,Math.floor(seen.length/2));
+    fresh=bank.filter(function(q){
+      var k=q.q||q.question||'';
+      return seen.indexOf(k)<0;
+    });
+  }
+  // Si toujours pas assez, utiliser tout
+  if(fresh.length<n) fresh=bank.slice();
+  // Mélanger et prendre n
+  var selected=pickRandom(fresh,n);
+  // Marquer comme vues
+  selected.forEach(function(q){
+    var k=q.q||q.question||'';
+    if(seen.indexOf(k)<0) seen.push(k);
+  });
+  SESSION_SEEN_QUESTIONS[sessionKey]=seen;
+  return selected;
+}
+
+// Réinitialiser le tracker au début de chaque session
+function resetSeenQuestions(){
+  SESSION_SEEN_QUESTIONS={};
+}
+
 
 
 function pickRandom(arr,n){
@@ -2265,7 +2529,7 @@ function startEx(setKey){
       // Compléter avec la banque locale pour atteindre 30 questions
       var fullBank=getFullQBank(levelKey,setKey);
       if(fullBank.length>0){
-        var localPool=pickRandom(fullBank,Math.max(0,30-qs.length));
+          var localPool=pickUnique(fullBank,Math.max(0,30-qs.length),levelKey+'/'+setKey);
         qs=qs.concat(localPool);
       }
       ST.exQs=qs.slice(0,30);
@@ -2274,10 +2538,7 @@ function startEx(setKey){
     // Pas de réponse IA — utiliser la banque complète avec répétitions si nécessaire
     var fullBank=getFullQBank(levelKey,setKey);
     if(fullBank.length>0){
-      var pool=fullBank.slice();
-      // Si moins de 30 questions, répéter la banque (mélangée différemment)
-      while(pool.length<30){ pool=pool.concat(pickRandom(fullBank,fullBank.length)); }
-      ST.exQs=pickRandom(pool,30);
+      ST.exQs=pickUnique(fullBank,30,levelKey+'/'+setKey);
     } else {
       ST.exQs=[];
     }
@@ -2872,6 +3133,7 @@ function init(){
 }
 
 async function startSess(){
+  resetSeenQuestions();
   var n=document.getElementById('sni');
   if(!n||!n.value.trim()){alert('Donne un nom a la session!');return;}
   ST.sName=n.value.trim();
