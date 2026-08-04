@@ -237,8 +237,8 @@ body{font-family:var(--fb);background:#e8f5e9;min-height:100vh;overflow-x:hidden
 // ⚙️ Config Supabase — remplace ces valeurs par tes vraies clés
 // Vercel injecte automatiquement les variables d'environnement si tu utilises
 // le build system. Pour un fichier statique, colle tes valeurs ici.
-window.__SUPABASE_URL__      = 'uklsubesjgaooigrcpem.supabase.co';
-window.__SUPABASE_ANON_KEY__ = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrbHN1YmVzamdhb29pZ3JjcGVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2NzE5NjMsImV4cCI6MjEwMTI0Nzk2M30.oOaHDkw8YYT1v4jTzoy_bu4xXqhdS0AmrISGJ65aBmA';
+window.__SUPABASE_URL__      = 'https://uklsubesjgaooigrcpem.supabase.co';
+window.__SUPABASE_ANON_KEY__ = 'COLLE_ICI_TA_CLE_ANON';
 </script>
 </head>
 <body>
@@ -465,8 +465,12 @@ function genericExosetsForLevel(levelKey){
 // Remplace et étend la couche v1
 // ═══════════════════════════════════════════════════════════════
 
-var SUPABASE_URL = window.__SUPABASE_URL__ || '';
-var SUPABASE_ANON_KEY = window.__SUPABASE_ANON_KEY__ || '';
+var SUPABASE_URL = window.__SUPABASE_URL__ || 'uklsubesjgaooigrcpem.supabase.co';
+// Corriger l'URL si https:// manque
+if(SUPABASE_URL && !SUPABASE_URL.startsWith('http')){
+  SUPABASE_URL = 'https://' + SUPABASE_URL;
+}
+var SUPABASE_ANON_KEY = window.__SUPABASE_ANON_KEY__ || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrbHN1YmVzamdhb29pZ3JjcGVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2NzE5NjMsImV4cCI6MjEwMTI0Nzk2M30.oOaHDkw8YYT1v4jTzoy_bu4xXqhdS0AmrISGJ65aBmA';
 var SUPABASE_READY = !!(SUPABASE_URL && SUPABASE_ANON_KEY);
 
 // ─── Client REST minimaliste ────────────────────────────────────
@@ -609,43 +613,70 @@ async function unlinkStudent(parentId, studentId) {
 // ═══ SESSIONS ══════════════════════════════════════════════════
 // Retourne {id, name, mode, trimestre, target_level, pts, created_at}
 async function getSessionsFor(profileId) {
-  if (!SUPABASE_READY) return _lsGet('ile_sessions_'+profileId) || [];
-  return await SB.select('sessions', {profile_id: profileId}, 'created_at') || [];
+  var cached = _lsGet('ile_sessions_'+profileId) || [];
+  if (!SUPABASE_READY) return cached;
+  try {
+    var remote = await SB.select('sessions', {profile_id: profileId}, 'created_at');
+    if (remote && remote.length > 0) {
+      _lsSet('ile_sessions_'+profileId, remote);
+      return remote;
+    }
+    return cached;
+  } catch(e) { return cached; }
 }
 
 // Crée la session et retourne son id (uuid Supabase ou local)
 async function createSession(profileId, sessionData) {
+  var localId = 'ls_' + Date.now();
   var s = {
-    profile_id:   profileId,
-    name:         sessionData.name,
-    mode:         sessionData.mode || 'revision',
-    trimestre:    sessionData.trimestre || 1,
+    id: localId, profile_id: profileId,
+    name: sessionData.name, mode: sessionData.mode || 'revision',
+    trimestre: sessionData.trimestre || 1,
     target_level: sessionData.targetLevel || null,
-    pts:          0
+    pts: 0, created_at: new Date().toISOString()
   };
-  if (!SUPABASE_READY) {
-    var localId = 'ls_' + Date.now();
-    s.id = localId;
-    s.created_at = new Date().toISOString();
-    var all = _lsGet('ile_sessions_'+profileId) || [];
-    all.unshift(s);
-    if (all.length > 30) all = all.slice(0, 30);
-    _lsSet('ile_sessions_'+profileId, all);
-    return localId;
+  var all = _lsGet('ile_sessions_' + profileId) || [];
+  all.unshift(s);
+  if (all.length > 30) all = all.slice(0, 30);
+  _lsSet('ile_sessions_' + profileId, all);
+  if (SUPABASE_READY) {
+    try {
+      var res = await SB.insert('sessions', {
+        profile_id: profileId, name: s.name, mode: s.mode,
+        trimestre: s.trimestre, target_level: s.target_level, pts: 0
+      });
+      if (res && res[0] && res[0].id) {
+        all[0].id = res[0].id;
+        _lsSet('ile_sessions_' + profileId, all);
+        return res[0].id;
+      }
+    } catch(e) {}
   }
-  var res = await SB.insert('sessions', s);
-  return res && res[0] ? res[0].id : null;
+  return localId;
 }
 
 async function updateSessionPts(sessionId, pts) {
-  if (!SUPABASE_READY) return; // localStorage ne gère pas ça simplement
-  try {
-    await fetch(SUPABASE_URL + '/rest/v1/sessions?id=eq.'+sessionId, {
-      method: 'PATCH',
-      headers: Object.assign({}, SB._h(), {'Prefer': 'return=minimal'}),
-      body: JSON.stringify({pts: pts})
+  // Mettre à jour dans tous les localStorage de profils
+  if(CURRENT_PROFILE){
+    var key = 'ile_sessions_' + CURRENT_PROFILE.id;
+    var all = _lsGet(key) || [];
+    var found = false;
+    all = all.map(function(s){
+      if(s.id === sessionId){ s.pts = pts; found = true; }
+      return s;
     });
-  } catch(e) {}
+    if(found) _lsSet(key, all);
+  }
+  // Essayer Supabase
+  if (SUPABASE_READY) {
+    try {
+      await fetch(SUPABASE_URL + '/rest/v1/sessions?id=eq.'+sessionId, {
+        method: 'PATCH',
+        headers: Object.assign({}, SB._h(), {'Prefer': 'return=minimal'}),
+        body: JSON.stringify({pts: pts})
+      });
+    } catch(e) {}
+  }
 }
 
 // ═══ RÉSULTATS DÉTAILLÉS ══════════════════════════════════════
@@ -662,14 +693,15 @@ async function saveExerciseResult(sessionId, profileId, subject, subjectLabel, s
     total:         total,
     pct:           pct
   };
-  if (!SUPABASE_READY) {
-    var key = 'ile_exres_' + sessionId;
-    var all = _lsGet(key) || [];
-    all.push(r);
-    _lsSet(key, all);
-    return;
+  // Toujours sauvegarder en localStorage
+  var key = 'ile_exres_' + sessionId;
+  var all = _lsGet(key) || [];
+  all.push(r);
+  _lsSet(key, all);
+  // Essayer Supabase
+  if (SUPABASE_READY) {
+    try { await SB.insert('exercise_results', r); } catch(e) {}
   }
-  await SB.insert('exercise_results', r);
 }
 
 // Enregistre le détail de chaque réponse
@@ -684,25 +716,34 @@ async function saveQuestionAnswer(sessionId, profileId, subject, question, optio
     correct_index: correctIndex,
     is_correct:    (givenIndex === correctIndex)
   };
-  if (!SUPABASE_READY) {
-    var key = 'ile_qa_' + sessionId;
-    var all = _lsGet(key) || [];
-    all.push(qa);
-    _lsSet(key, all);
-    return;
+  // Toujours sauvegarder en localStorage
+  var key = 'ile_qa_' + sessionId;
+  var all = _lsGet(key) || [];
+  all.push(qa);
+  _lsSet(key, all);
+  // Essayer Supabase
+  if (SUPABASE_READY) {
+    try { await SB.insert('question_answers', qa); } catch(e) {}
   }
-  await SB.insert('question_answers', qa);
 }
 
 // Récupère les résultats d'une session
 async function getExerciseResults(sessionId) {
-  if (!SUPABASE_READY) return _lsGet('ile_exres_'+sessionId) || [];
-  return await SB.select('exercise_results', {session_id: sessionId}, 'created_at') || [];
+  var cached = _lsGet('ile_exres_'+sessionId) || [];
+  if (!SUPABASE_READY) return cached;
+  try {
+    var remote = await SB.select('exercise_results', {session_id: sessionId}, 'created_at');
+    return (remote && remote.length > 0) ? remote : cached;
+  } catch(e) { return cached; }
 }
 
 async function getQuestionAnswers(sessionId) {
-  if (!SUPABASE_READY) return _lsGet('ile_qa_'+sessionId) || [];
-  return await SB.select('question_answers', {session_id: sessionId}, 'created_at') || [];
+  var cached = _lsGet('ile_qa_'+sessionId) || [];
+  if (!SUPABASE_READY) return cached;
+  try {
+    var remote = await SB.select('question_answers', {session_id: sessionId}, 'created_at');
+    return (remote && remote.length > 0) ? remote : cached;
+  } catch(e) { return cached; }
 }
 
 // ═══ BULLETINS ═════════════════════════════════════════════════
@@ -1134,9 +1175,10 @@ function getStatsForProfile(){
 // ═══════════════════════════════════════════════
 // ILE PERSONNALISEE — calculee a partir des vraies sessions du profil
 // ═══════════════════════════════════════════════
-function getIslandStatsForProfile(){
+async function getIslandStatsForProfile(){
   if(!CURRENT_PROFILE) return {level:1,buildings:1,creatures:0,totalPts:0};
-  var sessions=getSessionsFor(CURRENT_PROFILE.id);
+  var sessions=await getSessionsFor(CURRENT_PROFILE.id);
+  if(!Array.isArray(sessions)) sessions=[];
   var totalPts=sessions.reduce(function(s,sess){return s+(sess.pts||0);},0)+ST.pts;
   var totalExos=sessions.reduce(function(s,sess){return s+(sess.results?sess.results.length:0);},0)+(ST.sResults?ST.sResults.length:0);
   var level=Math.max(1,Math.floor(totalPts/50)+1);
@@ -1741,6 +1783,156 @@ var DIAGQ_CM1=[
   {subj:"Conjugaison",emoji:"🔤",cons:"Le passe compose se forme avec etre ou avoir + participe passe.",tip:"Aller se conjugue avec etre au passe compose.",q:"Conjugue 'aller' au passe compose, 1ere pers. sing.",opts:["j'allais","je suis alle","j'irai","j'allai"],correct:1}
 ];
 
+// ═══════════════════════════════════════════════════════
+// BANQUES ÉTENDUES — 30+ questions par matière
+// Complète les banques existantes via QBANK_EXT
+// ═══════════════════════════════════════════════════════
+
+var QBANK_EXT = {
+
+CE2:{
+  francais:[
+    {q:"Quel est le sujet dans : 'Les enfants jouent.'",opts:["Les enfants","jouent","aucun","enfants"],correct:0},
+    {q:"Quel est le féminin de 'boulanger' ?",opts:["boulangère","boulangeuse","boulangère","boulangerice"],correct:0},
+    {q:"Trouve le verbe : 'Le chat dort sur le canapé.'",opts:["chat","dort","canapé","sur"],correct:1},
+    {q:"Quel mot est mal orthographié ?",opts:["maison","château","cheveaux","soleil"],correct:2},
+    {q:"Quel mot est un adjectif : 'une grande maison rouge' ?",opts:["maison","une","grande","aucun"],correct:2},
+    {q:"Pluriel de 'cheval' ?",opts:["chevals","chevaux","chevales","cheval"],correct:1},
+    {q:"Quel temps est : 'demain, je mangerai' ?",opts:["présent","passé composé","futur","imparfait"],correct:2},
+    {q:"Trouve le COD : 'Marie mange une pomme.'",opts:["Marie","mange","une pomme","aucun"],correct:2},
+    {q:"Quelle est la nature de 'rapidement' ?",opts:["nom","adjectif","adverbe","verbe"],correct:2},
+    {q:"Quel mot est un synonyme de 'content' ?",opts:["triste","joyeux","fatigué","fâché"],correct:1},
+    {q:"Quel est l'antonyme de 'chaud' ?",opts:["tiède","froid","brûlant","doux"],correct:1},
+    {q:"Combien de syllabes dans 'papillon' ?",opts:["2","3","4","5"],correct:1}
+  ],
+  maths:[
+    {q:"Combien font 47 + 35 ?",opts:["72","82","81","73"],correct:1},
+    {q:"Quelle est la moitié de 48 ?",opts:["22","24","26","20"],correct:1},
+    {q:"Combien font 9 × 7 ?",opts:["54","56","63","72"],correct:2},
+    {q:"64 ÷ 8 = ?",opts:["6","7","8","9"],correct:2},
+    {q:"Quel nombre vient après 99 ?",opts:["100","98","101","90"],correct:0},
+    {q:"Quelle est l'heure sur une horloge qui indique 14h30 ?",opts:["2h30 du matin","2h30 de l'après-midi","3h30","1h30"],correct:1},
+    {q:"Quel est le périmètre d'un carré de côté 5cm ?",opts:["10cm","15cm","20cm","25cm"],correct:2},
+    {q:"3/4 de 20 = ?",opts:["12","15","10","18"],correct:1},
+    {q:"Convertis 3km en mètres",opts:["300m","3000m","30m","30000m"],correct:1},
+    {q:"Quelle est l'aire d'un rectangle 4cm × 6cm ?",opts:["20cm²","24cm²","10cm²","12cm²"],correct:1},
+    {q:"Combien font 125 - 48 ?",opts:["67","77","87","57"],correct:1},
+    {q:"Quel nombre est le plus grand : 0,5 ou 0,45 ?",opts:["0,45","0,5","égaux","impossible"],correct:1}
+  ]
+},
+
+CM1:{
+  francais:[
+    {q:"Dans 'Il court vite', 'vite' est :",opts:["un adjectif","un adverbe","un nom","un verbe"],correct:1},
+    {q:"Quel est le COI dans : 'Il parle à son ami.' ?",opts:["Il","parle","à son ami","aucun"],correct:2},
+    {q:"Conjugue 'finir' au passé composé, 1ère pers. sing.",opts:["je finissais","j'ai fini","je finis","je finissais"],correct:1},
+    {q:"Quel est le sujet réel de 'Il est arrivé un train.' ?",opts:["Il","est","un train","arrivé"],correct:2},
+    {q:"Quel est le sens figuré de 'avoir le cafard' ?",opts:["avoir un insecte","être triste","avoir faim","être fatigué"],correct:1},
+    {q:"Quel mot est un homonyme de 'ver' ?",opts:["verre","air","mer","sel"],correct:0},
+    {q:"Accord dans 'Les roses sont belles.' : 'belles' est :",opts:["féminin singulier","féminin pluriel","masculin pluriel","masculin singulier"],correct:1},
+    {q:"Quelle figure de style : 'Il pleut des cordes.'",opts:["comparaison","métaphore","hyperbole","litote"],correct:1},
+    {q:"Quel mode est utilisé dans : 'Viens ici !'",opts:["indicatif","subjonctif","impératif","infinitif"],correct:2},
+    {q:"Quel est le préfixe dans 'impossible' ?",opts:["im","possible","im-","ible"],correct:0},
+    {q:"Quel est le suffixe dans 'boulangerie' ?",opts:["boulang","-erie","boulanger","boulan"],correct:1},
+    {q:"'Nonobstant' signifie :",opts:["donc","cependant","parce que","et"],correct:1}
+  ],
+  maths:[
+    {q:"Quelle est la valeur de 5³ ?",opts:["15","125","25","50"],correct:1},
+    {q:"PGCD de 12 et 18 ?",opts:["2","3","6","9"],correct:2},
+    {q:"0,75 × 4 = ?",opts:["2","3","4","0,3"],correct:1},
+    {q:"Convertis 2h45 en minutes",opts:["125min","145min","165min","175min"],correct:2},
+    {q:"Quel est le volume d'un cube de côté 3cm ?",opts:["9cm³","18cm³","27cm³","27cm²"],correct:2},
+    {q:"Encadre √50 entre deux entiers consécutifs",opts:["6 et 7","7 et 8","5 et 6","8 et 9"],correct:1},
+    {q:"Quelle fraction est équivalente à 3/4 ?",opts:["6/9","9/12","6/8","4/5"],correct:2},
+    {q:"Calcule 20% de 150",opts:["20","25","30","35"],correct:2},
+    {q:"Quel est le périmètre d'un triangle équilatéral de côté 7cm ?",opts:["14cm","21cm","49cm","28cm"],correct:1},
+    {q:"Convertis 3,5 km en m",opts:["350m","3500m","35000m","35m"],correct:1},
+    {q:"Combien font (3+4) × (5-2) ?",opts:["14","21","26","17"],correct:1},
+    {q:"Quelle est la médiane de : 3, 5, 7, 9, 11 ?",opts:["5","7","9","6"],correct:1}
+  ]
+},
+
+CINQUIEME:{
+  francais:[
+    {q:"Quel est le registre du Roman de Renart ?",opts:["tragique","épique","satirique","lyrique"],correct:2},
+    {q:"Dans 'qu'il vienne', quel mode ?",opts:["indicatif","subjonctif","conditionnel","impératif"],correct:1},
+    {q:"Qu'est-ce qu'une antithèse ?",opts:["répétition","opposition de deux idées","comparaison","question"],correct:1},
+    {q:"Quel temps : 'il eut fini' ?",opts:["passé simple","passé antérieur","plus-que-parfait","futur antérieur"],correct:1},
+    {q:"La phrase 'Cette maison est une prison' est une :",opts:["comparaison","métaphore","hyperbole","litote"],correct:1},
+    {q:"Quel est le COD dans : 'Il aime la musique.' ?",opts:["Il","aime","la musique","aucun"],correct:2},
+    {q:"Quel est le temps de 'il finissait' ?",opts:["présent","imparfait","futur","passé composé"],correct:1},
+    {q:"Qu'est-ce qu'une proposition subordonnée relative ?",opts:["complète le verbe","qualifie un nom","exprime le but","exprime la cause"],correct:1},
+    {q:"Dans 'bien que + subjonctif', quelle relation ?",opts:["cause","opposition","conséquence","but"],correct:1},
+    {q:"Qu'est-ce que la narration à la 1ère personne ?",opts:["narrateur extérieur","narrateur personnage","narrateur omniscient","aucun"],correct:1},
+    {q:"Quel écrivain a écrit 'Tristan et Iseut' (adaptation) ?",opts:["Molière","Béroul","Racine","Hugo"],correct:1},
+    {q:"Une 'litote' consiste à :",opts:["exagérer","dire moins pour suggérer plus","comparer","répéter"],correct:1}
+  ],
+  maths:[
+    {q:"Simplifie : 15/25",opts:["2/3","3/5","4/5","5/8"],correct:1},
+    {q:"(-4) × (-3) = ?",opts:["-12","12","-7","7"],correct:1},
+    {q:"Résous : 4x + 8 = 24",opts:["x=3","x=4","x=5","x=6"],correct:1},
+    {q:"Quel est l'angle dans un triangle rectangle en plus du 90° si un angle est 35° ?",opts:["55°","45°","65°","75°"],correct:0},
+    {q:"Quel est le périmètre d'un disque de rayon 5cm (π≈3,14) ?",opts:["15,7cm","31,4cm","78,5cm","25cm"],correct:1},
+    {q:"Calcule 3/4 + 1/3",opts:["4/7","11/12","13/12","1"],correct:2},
+    {q:"(-5)² = ?",opts:["-25","25","10","-10"],correct:1},
+    {q:"Quel est le volume d'un pavé 3×4×5 ?",opts:["47","60","24","120"],correct:1},
+    {q:"Résous : -2x < 6",opts:["x<-3","x>-3","x<3","x>3"],correct:1},
+    {q:"Réduis : 3a + 2b - a + 4b",opts:["2a+6b","4a+6b","2a+2b","4a+2b"],correct:0},
+    {q:"Quel est le théorème de Pythagore ?",opts:["a²=b+c","a+b=c","a²=b²+c²","a=b²-c²"],correct:2},
+    {q:"Calcule l'aire d'un disque de rayon 4cm (π≈3,14)",opts:["12,56cm²","25,12cm²","50,24cm²","100,48cm²"],correct:2}
+  ],
+  svt:[
+    {q:"Quelle cellule produit l'insuline ?",opts:["hépatocyte","cellule bêta du pancréas","neurone","globule rouge"],correct:1},
+    {q:"Qu'est-ce que la photosynthèse ?",opts:["respiration des plantes","production de matière organique par la lumière","digestion","reproduction"],correct:1},
+    {q:"Quel organe filtre le sang ?",opts:["foie","cœur","rein","poumon"],correct:2},
+    {q:"Qu'est-ce qu'un être unicellulaire ?",opts:["composé d'une seule cellule","sans cellule","à plusieurs noyaux","végétal"],correct:0},
+    {q:"Qu'est-ce que l'ADN ?",opts:["protéine","support de l'information génétique","lipide","glucide"],correct:1},
+    {q:"Quel est le rôle des poumons ?",opts:["filtrer le sang","digérer","assurer les échanges gazeux","produire des hormones"],correct:2}
+  ]
+},
+
+SECONDE:{
+  francais:[
+    {q:"Qu'est-ce qu'un alexandrin ?",opts:["10 syllabes","12 syllabes","8 syllabes","14 syllabes"],correct:1},
+    {q:"Quel est le thème de la poésie baroque ?",opts:["raison","fuite du temps et mort","nature","amour courtois"],correct:1},
+    {q:"Qu'est-ce que le classicisme au XVIIe siècle ?",opts:["liberté totale","respect des règles et de la raison","romantisme","réalisme"],correct:1},
+    {q:"Molière appartient à quel courant littéraire ?",opts:["baroque","classicisme","romantisme","symbolisme"],correct:1},
+    {q:"Qu'est-ce qu'un texte argumentatif ?",opts:["raconte une histoire","défend une thèse","décrit","explique"],correct:1},
+    {q:"Quel registre dans une tragédie ?",opts:["comique","tragique","lyrique","épique"],correct:1},
+    {q:"Qu'est-ce qu'une anaphore ?",opts:["répétition en fin de vers","répétition en début de vers ou phrase","comparaison","question rhétorique"],correct:1},
+    {q:"Le sonnet est composé de :",opts:["2 quatrains et 2 tercets","3 quatrains","4 strophes de 4 vers","2 tercets"],correct:0},
+    {q:"Qu'est-ce que le point de vue omniscient ?",opts:["narrateur sait tout","narrateur est personnage","narrateur observe de l'extérieur","aucun"],correct:0},
+    {q:"Qu'est-ce qu'une périphrase ?",opts:["mot inventé","expression indirecte pour désigner qqch","répétition","opposition"],correct:1},
+    {q:"La Fontaine écrivait surtout des :",opts:["tragédies","fables","romans","poèmes épiques"],correct:1},
+    {q:"Qu'est-ce que le monologue intérieur ?",opts:["dialogue entre deux personnages","pensées d'un personnage exprimées","discours rapporté","narration"],correct:1}
+  ],
+  maths:[
+    {q:"f(x) = 2x² - 3x + 1 : quelle est f(2) ?",opts:["2","3","4","5"],correct:1},
+    {q:"Résous : x² - 4 = 0",opts:["x=2","x=-2","x=2 ou x=-2","x=4"],correct:2},
+    {q:"Quelle est la pente de la droite y = 3x - 5 ?",opts:["3","-5","5","-3"],correct:0},
+    {q:"Calcule le discriminant de x² - 5x + 6",opts:["1","25","1","11"],correct:0},
+    {q:"Le vecteur AB a pour coordonnées (4,-3). Sa norme est :",opts:["5","7","1","25"],correct:0},
+    {q:"Quel est l'ensemble de définition de f(x) = 1/x ?",opts:["ℝ","ℝ\\{0}","ℝ+","ℝ-"],correct:1},
+    {q:"cos(0°) = ?",opts:["0","1","-1","0,5"],correct:1},
+    {q:"Si f est croissante sur [a,b] et a < b, alors :",opts:["f(a)>f(b)","f(a)<f(b)","f(a)=f(b)","impossible à dire"],correct:1},
+    {q:"Quelle est la forme factorisée de x²-9 ?",opts:["(x-3)²","(x+3)(x-3)","(x-9)(x+1)","x(x-9)"],correct:1},
+    {q:"P(A∪B) = P(A) + P(B) - P(A∩B) est :",opts:["formule de Bayes","formule des probabilités totales","formule de l'addition","formule du complémentaire"],correct:2},
+    {q:"La médiane d'une série est :",opts:["la valeur la plus fréquente","la valeur centrale","la moyenne","la somme divisée par 2"],correct:1},
+    {q:"sin²(x) + cos²(x) = ?",opts:["0","1","2","sin(2x)"],correct:1}
+  ]
+}
+};
+
+// ─── Résolveur enrichi ──────────────────────────────────────────────
+// Combine la banque de base + les questions étendues
+function getFullQBank(levelKey, subject){
+  var lc=getLevelContent(levelKey);
+  var base=(lc.bank && lc.bank[subject])?lc.bank[subject]:[];
+  var ext=(QBANK_EXT[levelKey] && QBANK_EXT[levelKey][subject])?QBANK_EXT[levelKey][subject]:[];
+  return base.concat(ext);
+}
+
+
 function pickRandom(arr,n){
   var a=arr.slice().sort(function(){return Math.random()-.5;});
   return a.slice(0,Math.min(n,a.length));
@@ -1973,7 +2165,7 @@ async function renderDash(){
   var lvl=CURRENT_PROFILE?LEVELS[CURRENT_PROFILE.level]:null;
   var lvlLabel=lvl?lvl.label:'CE2';
   var weaknesses=CURRENT_PROFILE?(await getWeaknessSummary(CURRENT_PROFILE.id)):[];
-  var focusText=weaknesses.length>0?weaknesses[0]:'tes priorites';var islandStats=getIslandStatsForProfile();
+  var focusText=weaknesses.length>0?weaknesses[0]:'tes priorites';var islandStats=await getIslandStatsForProfile();
   view.innerHTML=sb()+(ST.sName?'<div style="margin:6px 0;display:flex;gap:6px;flex-wrap:wrap;">'
     +'<span style="display:inline-block;background:linear-gradient(135deg,var(--purple-l),var(--purple));color:#fff;font-family:var(--fd);font-size:12px;padding:5px 12px;border-radius:999px;box-shadow:0 3px 0 var(--purple-d);">📂 '+ST.sName+'</span>'
     +(ST.sessionMode==='revision'?'<span style="display:inline-block;background:linear-gradient(135deg,var(--teal-l),var(--teal));color:#fff;font-family:var(--fd);font-size:12px;padding:5px 12px;border-radius:999px;box-shadow:0 3px 0 var(--teal-d);">📚 Révision T'+ST.trimestre+'</span>':'')
@@ -2007,10 +2199,20 @@ function startEx(setKey){
   var levelKey=CURRENT_PROFILE?CURRENT_PROFILE.level:'CE2';
   var lc=getLevelContent(levelKey);
   generateAI(setKey,levelKey,function(qs){
-    if(qs){ ST.exQs=qs; renderEx(); return; }
-    if(lc.bank && lc.bank[setKey] && lc.bank[setKey].length>0){
-      var n=(lc.exosets&&lc.exosets[setKey]&&lc.exosets[setKey].n)||4;
-      ST.exQs=pickRandom(lc.bank[setKey],n);
+    if(qs && qs.length>0){
+      // Compléter avec la banque locale pour atteindre 30 questions
+      var fullBank=getFullQBank(levelKey,setKey);
+      if(fullBank.length>0){
+        var localPool=pickRandom(fullBank,Math.max(0,30-qs.length));
+        qs=qs.concat(localPool);
+      }
+      ST.exQs=qs.slice(0,30);
+      renderEx(); return;
+    }
+    // Pas de réponse IA — utiliser la banque complète
+    var fullBank=getFullQBank(levelKey,setKey);
+    if(fullBank.length>0){
+      ST.exQs=pickRandom(fullBank,Math.min(30,fullBank.length));
     } else {
       ST.exQs=[];
     }
@@ -2025,7 +2227,7 @@ function generateAI(setKey,levelKey,cb){
   var exo=(lc.exosets&&lc.exosets[setKey])?lc.exosets[setKey]:null;
   var subjLabel=exo?exo.label:(sub?sub.label:setKey);
   var levelLabel=lvl?lvl.label:'CE2';
-  var n=exo?exo.n:4;
+  var n=20; // on complètera avec la banque locale pour atteindre 30
   var isLecture=(setKey==='lecture');
   var formatExample=isLecture
     ? '[{"texte":"un court texte adapte au niveau","q":"une question sur le texte","opts":["A","B","C","D"],"correct":0}]'
@@ -2038,11 +2240,11 @@ function generateAI(setKey,levelKey,cb){
     var tgtLabel=tgtLvl?tgtLvl.label:levelLabel;
     modeCtx=' Melange equitable de contenu de fin de '+levelLabel+' et de debut de '+tgtLabel+' pour preparer le passage entre les deux niveaux.';
   }
-  var prompt='Genere '+n+' exercices de '+subjLabel+' niveau '+levelLabel+' (systeme scolaire francais/AEFE).'+modeCtx+' Reponds UNIQUEMENT avec un tableau JSON valide, sans texte ni backticks. Format exact : '+formatExample+'. Les 4 options doivent etre plausibles, correct est l index 0-3 de la bonne reponse.';
+  var prompt='Genere exactement '+n+' exercices VARIES et DIFFERENTS de '+subjLabel+' niveau '+levelLabel+' (systeme scolaire francais/AEFE).'+modeCtx+' Couvre des notions differentes pour chaque question. Reponds UNIQUEMENT avec un tableau JSON valide de '+n+' elements, sans texte ni backticks. Format exact : '+formatExample+'. Les 4 options doivent etre plausibles, correct est l index 0-3 de la bonne reponse. Varie les difficultes.';
   fetch('/api/chat',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:900,messages:[{role:'user',content:prompt}]})
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:3000,messages:[{role:'user',content:prompt}]})
   }).then(function(r){return r.json();}).then(function(data){
     try{
       var txt=(data.content||[]).map(function(c){return c.text||'';}).join('');
@@ -2115,8 +2317,8 @@ function redeem(cost,btn){
   setTimeout(renderRewards,1200);
 }
 
-function renderIsland(){
-  var stats=getIslandStatsForProfile();
+async function renderIsland(){
+  var stats=await getIslandStatsForProfile();
   var lvl=CURRENT_PROFILE?LEVELS[CURRENT_PROFILE.level]:null;
   var lvlLabel=lvl?lvl.label:'CE2';
   var creatureEmojis=['🐢','🔥','🦊','🦋','🐬','🦉','🐉','🦄'];
@@ -2228,7 +2430,29 @@ function confetti(){
 
 function fmtD(ts){var d=new Date(ts);return d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear()+' '+d.getHours()+'h'+String(d.getMinutes()).padStart(2,'0');}
 function scC(p){return p>=80?'#a5d6a7':p>=50?'#ffe984':'#ffb3b3';}
-async function saveAndEnd(){var s={name:ST.sName,date:Date.now(),pts:ST.pts,results:ST.sResults.slice(),mode:ST.sessionMode,trimestre:ST.trimestre,targetLevel:ST.targetLevel};await saveSessionFor(CURRENT_PROFILE.id,s);confetti();renderDash();}
+async function saveAndEnd(){
+  if(CURRENT_SESSION_ID){
+    await updateSessionPts(CURRENT_SESSION_ID, ST.pts);
+  } else if(CURRENT_PROFILE){
+    // Fallback: créer la session maintenant si elle n'existe pas
+    var sid=await createSession(CURRENT_PROFILE.id,{
+      name:ST.sName, mode:ST.sessionMode,
+      trimestre:ST.trimestre, targetLevel:ST.targetLevel
+    });
+    await updateSessionPts(sid, ST.pts);
+  }
+  confetti();
+  var v=document.getElementById('v-dash');
+  if(v) v.innerHTML=sb()
+    +'<div style="text-align:center;padding:20px;">'
+    +'<div style="font-size:60px;margin-bottom:10px;">💾</div>'
+    +'<h2 style="font-family:var(--fd);font-size:24px;">Session enregistrée !</h2>'
+    +'<p style="font-family:var(--fa);font-weight:700;margin:10px auto;max-width:280px;color:var(--ink-soft);">'+ST.sName+' — '+ST.pts+' pts</p>'
+    +'<div style="margin-top:20px;display:flex;flex-direction:column;gap:10px;">'
+    +'<button class="btn btn-purple btn-block" onclick="openSess()">📋 Voir les sessions</button>'
+    +'<button class="btn btn-gold btn-block" onclick="goTo(\'login\')">🚀 Nouvelle session</button>'
+    +'</div></div>';
+}
 function openSess(){ST.ptab='sessions';goTo('parent');}
 
 // ═══════════════════════════════════════════════
