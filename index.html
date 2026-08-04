@@ -238,7 +238,7 @@ body{font-family:var(--fb);background:#e8f5e9;min-height:100vh;overflow-x:hidden
 // Vercel injecte automatiquement les variables d'environnement si tu utilises
 // le build system. Pour un fichier statique, colle tes valeurs ici.
 window.__SUPABASE_URL__      = 'https://uklsubesjgaooigrcpem.supabase.co';
-window.__SUPABASE_ANON_KEY__ = 'COLLE_ICI_TA_CLE_ANON';
+window.__SUPABASE_ANON_KEY__ = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrbHN1YmVzamdhb29pZ3JjcGVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2NzE5NjMsImV4cCI6MjEwMTI0Nzk2M30.oOaHDkw8YYT1v4jTzoy_bu4xXqhdS0AmrISGJ65aBmA';
 </script>
 </head>
 <body>
@@ -465,13 +465,16 @@ function genericExosetsForLevel(levelKey){
 // Remplace et étend la couche v1
 // ═══════════════════════════════════════════════════════════════
 
-var SUPABASE_URL = window.__SUPABASE_URL__ || 'uklsubesjgaooigrcpem.supabase.co';
+var SUPABASE_URL = window.__SUPABASE_URL__ || '';
 // Corriger l'URL si https:// manque
 if(SUPABASE_URL && !SUPABASE_URL.startsWith('http')){
   SUPABASE_URL = 'https://' + SUPABASE_URL;
 }
-var SUPABASE_ANON_KEY = window.__SUPABASE_ANON_KEY__ || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrbHN1YmVzamdhb29pZ3JjcGVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2NzE5NjMsImV4cCI6MjEwMTI0Nzk2M30.oOaHDkw8YYT1v4jTzoy_bu4xXqhdS0AmrISGJ65aBmA';
-var SUPABASE_READY = !!(SUPABASE_URL && SUPABASE_ANON_KEY);
+var SUPABASE_ANON_KEY = window.__SUPABASE_ANON_KEY__ || '';
+var SUPABASE_READY = !!(SUPABASE_URL && SUPABASE_ANON_KEY 
+  && !SUPABASE_ANON_KEY.includes('COLLE_ICI')
+  && !SUPABASE_ANON_KEY.includes('TON_ANON')
+  && SUPABASE_URL.startsWith('https://'));
 
 // ─── Client REST minimaliste ────────────────────────────────────
 var SB = {
@@ -583,31 +586,40 @@ async function deleteProfile(id) {
 
 // ═══ LIENS PARENT ↔ ÉLÈVE ══════════════════════════════════════
 async function getLinkedStudents(parentId) {
-  if (!SUPABASE_READY) {
-    var links = _lsGet('ile_links_'+parentId) || [];
-    return links;
-  }
-  var links = await SB.select('parent_links', {parent_id: parentId}, 'created_at') || [];
-  return links.map(function(l){ return l.student_id; });
+  var cached = _lsGet('ile_links_'+parentId) || [];
+  if (!SUPABASE_READY) return cached;
+  try {
+    var remote = await SB.select('parent_links', {parent_id: parentId}, 'created_at') || [];
+    var ids = remote.map(function(l){ return l.student_id; });
+    if (ids.length > 0) { _lsSet('ile_links_'+parentId, ids); return ids; }
+    return cached;
+  } catch(e) { return cached; }
 }
 
 async function linkStudentToParent(parentId, studentId) {
-  if (!SUPABASE_READY) {
-    var links = _lsGet('ile_links_'+parentId) || [];
-    if (!links.includes(studentId)) { links.push(studentId); _lsSet('ile_links_'+parentId, links); }
-    return;
+  // Toujours sauvegarder en localStorage
+  var links = _lsGet('ile_links_'+parentId) || [];
+  if (!links.includes(studentId)) { 
+    links.push(studentId); 
+    _lsSet('ile_links_'+parentId, links); 
   }
-  await SB.upsert('parent_links', {parent_id: parentId, student_id: studentId});
+  // Essayer Supabase
+  if (SUPABASE_READY) {
+    try { await SB.upsert('parent_links', {parent_id: parentId, student_id: studentId}); } 
+    catch(e) { console.warn('linkStudentToParent Supabase failed:', e); }
+  }
 }
 
 async function unlinkStudent(parentId, studentId) {
-  if (!SUPABASE_READY) {
-    _lsSet('ile_links_'+parentId, (_lsGet('ile_links_'+parentId)||[]).filter(function(id){return id!==studentId;}));
-    return;
+  // Toujours supprimer du localStorage
+  _lsSet('ile_links_'+parentId, (_lsGet('ile_links_'+parentId)||[]).filter(function(id){return id!==studentId;}));
+  // Essayer Supabase
+  if (SUPABASE_READY) {
+    try {
+      var url = SUPABASE_URL + '/rest/v1/parent_links?parent_id=eq.'+encodeURIComponent(parentId)+'&student_id=eq.'+encodeURIComponent(studentId);
+      await fetch(url, {method:'DELETE', headers:SB._h()});
+    } catch(e) {}
   }
-  // Supabase: delete with two filters
-  var url = SUPABASE_URL + '/rest/v1/parent_links?parent_id=eq.'+encodeURIComponent(parentId)+'&student_id=eq.'+encodeURIComponent(studentId);
-  try { await fetch(url, {method:'DELETE', headers:SB._h()}); } catch(e) {}
 }
 
 // ═══ SESSIONS ══════════════════════════════════════════════════
@@ -2177,16 +2189,66 @@ function renderExMenu(){
   var view=document.getElementById('v-exercise');
   ST.exStep=0;ST.exCorrect=0;ST.exQs=[];
   var levelKey=CURRENT_PROFILE?CURRENT_PROFILE.level:'CE2';
+  var isPasseport=(ST.sessionMode==='passeport'&&!!ST.targetLevel);
   var lc=getLevelContent(levelKey);
-  var exo=lc.exosets || genericExosetsForLevel(levelKey);
-  var keys=Object.keys(exo);
+  var exo=lc.exosets||genericExosetsForLevel(levelKey);
   var colors=['var(--coral)','var(--gold-d)','var(--sky)','var(--teal)','var(--green)','var(--purple)','var(--coral-d)'];
-  var cards=keys.map(function(k,i){
-    var ex=exo[k];
-    var c=colors[i%colors.length];
-    return '<div class="emenu-card" onclick="startEx(\''+k+'\')" style="border-left:6px solid '+c+';"><div class="mi" style="background:'+c+'22;border-color:'+c+';box-shadow:0 4px 0 '+c+'88;">'+ex.icon+'</div><div class="mb"><div class="mn">'+ex.label+'</div><div class="md">Questions variees · IA ou banque locale</div></div><div style="font-size:20px;">→</div></div>';
-  }).join('');
-  view.innerHTML=sb()+'<div class="dh" style="font-size:24px;">Quelle matiere ? 🎯</div>'+bubble('Choisis ta mission ! Je prepare de nouvelles questions pour toi ⚡','excited')+'<div style="margin-top:8px;">'+cards+'</div><div style="margin-top:14px;"><button class="btn btn-gold btn-block" onclick="goTo(\'dash\')">← Retour au tableau de bord</button></div>';
+
+  function makeCard(k,ex,c,fnName,extraArg){
+    var args=extraArg?("'"+k+"','"+extraArg+"'"):"'"+k+"'";
+    return '<div class="emenu-card" onclick="'+fnName+'('+args+')" style="border-left:6px solid '+c+';">'
+      +'<div class="mi" style="background:'+c+'22;border-color:'+c+';box-shadow:0 4px 0 '+c+'88;">'+ex.icon+'</div>'
+      +'<div class="mb"><div class="mn">'+ex.label+'</div><div class="md">30 questions</div></div>'
+      +'<div style="font-size:20px;">→</div></div>';
+  }
+
+  var cards='';
+  if(isPasseport){
+    var lcTarget=getLevelContent(ST.targetLevel);
+    var exoTarget=lcTarget.exosets||genericExosetsForLevel(ST.targetLevel);
+    var tgtLabel=LEVELS[ST.targetLevel]?LEVELS[ST.targetLevel].label:ST.targetLevel;
+    var curLabel=LEVELS[levelKey]?LEVELS[levelKey].label:levelKey;
+    cards+='<div style="font-family:var(--fd);font-size:13px;color:var(--ink-soft);margin:8px 0 6px;">📚 Révision '+curLabel+'</div>';
+    cards+=Object.keys(exo).map(function(k,i){return makeCard(k,exo[k],colors[i%colors.length],'startEx','');}).join('');
+    cards+='<div style="font-family:var(--fd);font-size:13px;color:var(--ink-soft);margin:14px 0 6px;">🎯 Préparation '+tgtLabel+'</div>';
+    cards+=Object.keys(exoTarget).map(function(k,i){return makeCard(k,exoTarget[k],colors[(i+3)%colors.length],'startExPasseport',ST.targetLevel);}).join('');
+  } else {
+    cards=Object.keys(exo).map(function(k,i){return makeCard(k,exo[k],colors[i%colors.length],'startEx','');}).join('');
+  }
+
+  var modeTag=isPasseport?'🎒 Passeport':'📚 Révision T'+ST.trimestre;
+  view.innerHTML=sb()
+    +'<div style="margin:6px 0;"><span style="display:inline-block;background:linear-gradient(135deg,var(--teal-l),var(--teal));color:#fff;font-family:var(--fd);font-size:12px;padding:5px 12px;border-radius:999px;">'+modeTag+'</span></div>'
+    +'<div class="dh" style="font-size:22px;">Quelle matière ? 🎯</div>'
+    +bubble('Choisis ta mission ! 30 questions t\'attendent ⚡','excited')
+    +'<div style="margin-top:8px;">'+cards+'</div>'
+    +'<div style="margin-top:14px;"><button class="btn btn-gold btn-block" onclick="goTo(\'dash\')">← Tableau de bord</button></div>';
+}
+
+// startEx pour le niveau cible en mode passeport
+function startExPasseport(setKey, targetLevelKey){
+  ST.exSet=setKey;
+  ST.exStep=0;
+  ST.exCorrect=0;
+  var view=document.getElementById('v-exercise');
+  view.innerHTML=sb()+'<div class="loading"><div class="lico">⚡</div><div class="ltxt">Zappy prépare tes questions...</div><div class="lsub">Niveau '+( LEVELS[targetLevelKey]?LEVELS[targetLevelKey].label:targetLevelKey)+'</div></div>';
+  showScreen('exercise');
+  generateAI(setKey,targetLevelKey,function(qs){
+    if(qs&&qs.length>0){
+      var fullBank=getFullQBank(targetLevelKey,setKey);
+      if(fullBank.length>0){
+        var pool=pickRandom(fullBank,Math.max(0,30-qs.length));
+        qs=qs.concat(pool);
+      }
+      ST.exQs=qs.slice(0,30);
+    } else {
+      var fullBank=getFullQBank(targetLevelKey,setKey);
+      var pool=fullBank.slice();
+      while(pool.length<30&&fullBank.length>0){ pool=pool.concat(pickRandom(fullBank,fullBank.length)); }
+      ST.exQs=pickRandom(pool,Math.min(30,pool.length));
+    }
+    renderEx();
+  });
 }
 
 function startEx(setKey){
@@ -2209,10 +2271,13 @@ function startEx(setKey){
       ST.exQs=qs.slice(0,30);
       renderEx(); return;
     }
-    // Pas de réponse IA — utiliser la banque complète
+    // Pas de réponse IA — utiliser la banque complète avec répétitions si nécessaire
     var fullBank=getFullQBank(levelKey,setKey);
     if(fullBank.length>0){
-      ST.exQs=pickRandom(fullBank,Math.min(30,fullBank.length));
+      var pool=fullBank.slice();
+      // Si moins de 30 questions, répéter la banque (mélangée différemment)
+      while(pool.length<30){ pool=pool.concat(pickRandom(fullBank,fullBank.length)); }
+      ST.exQs=pickRandom(pool,30);
     } else {
       ST.exQs=[];
     }
