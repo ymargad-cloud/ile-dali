@@ -3259,11 +3259,13 @@ async function renderProfiles(){
     var lvl=isParent?null:LEVELS[p.level];
     var subtitle=isParent?'Compte parent':(lvl?lvl.label+' - '+lvl.cycle:'?');
     var clickFn=isParent?'selectParent':'selectProfile';
-    return '<div class="prof-card" onclick="'+clickFn+'(\''+p.id+'\')">'
-      +'<div class="prof-avatar">'+(p.emoji||'?')+'</div>'
+    var safeEmoji=(p.emoji||'🧒').replace(/"/g,'');
+    var safeName=(p.name||'').replace(/"/g,'');
+    return '<div class="prof-card" onclick="'+clickFn+'(\''+p.id+'\')" data-pid="'+p.id+'" data-name="'+safeName+'" data-level="'+(p.level||'')+'" data-emoji="'+safeEmoji+'" data-role="'+(p.role||'student')+'">'
+      +'<div class="prof-avatar">'+(p.emoji||'🧒')+'</div>'
       +'<div class="prof-info"><div class="prof-name">'+p.name+'</div>'
       +'<div class="prof-level">'+subtitle+'</div></div>'
-      +'<button class="prof-del" onclick="event.stopPropagation();confirmDeleteProfile(\''+p.id+'\',\''+p.name+'\')">X</button>'
+      +'<button class="prof-del" onclick="event.stopPropagation();confirmDeleteProfile(\''+p.id+'\',\''+p.name+'\')">🗑</button>'
       +'</div>';
   }
 
@@ -3337,15 +3339,24 @@ function getCurrentTrimestre(){
 function selectProfile(id){
   getProfiles().then(function(all){
     var p=all.find(function(x){return x.id===id;});
-    if(!p) return;
+    if(!p){
+      // Fallback: chercher dans le DOM (les profils sont déjà affichés)
+      console.warn('[Ile] Profil '+id+' non trouvé dans localStorage');
+      // Tenter de reconstruire depuis le DOM
+      var card=document.querySelector('[data-pid="'+id+'"]');
+      if(card){
+        p={id:id, name:card.dataset.name, level:card.dataset.level,
+           emoji:card.dataset.emoji, role:card.dataset.role||'student'};
+      } else {
+        alert('Profil introuvable. Recréez le profil.');
+        return;
+      }
+    }
     CURRENT_PROFILE=p;
     ST.pts=0;ST.streak=0;ST.sName='';ST.sResults=[];
     if(NIVEAUX_PRIMAIRE.indexOf(p.level)>=0){
-      // Primaire : lancer directement les exercices
-      showScreen('dash');
-      renderDash();
+      renderDash().then(function(){ showScreen('dash'); });
     } else {
-      // Collège/Lycée : écran de configuration
       goTo('login');
     }
   });
