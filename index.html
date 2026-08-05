@@ -2628,6 +2628,71 @@ async function renderDash(){
   var lvlLabel=lvl?lvl.label:'CE2';
   var weaknesses=CURRENT_PROFILE?(await getWeaknessSummary(CURRENT_PROFILE.id)):[];
   var focusText=weaknesses.length>0?weaknesses[0]:'tes priorites';var islandStats=await getIslandStatsForProfile();
+  var isTerminale=(lvlKey==='TERMINALE');
+
+  // ─── MODE PRIMAIRE : interface simplifiée ─────────────
+  if(isPrimaire()){
+    var sessions=await getSessionsFor(CURRENT_PROFILE.id);
+    if(!Array.isArray(sessions)) sessions=[];
+    var now=new Date();
+    var todaySessions=sessions.filter(function(s){
+      if(!s.created_at) return false;
+      var d=new Date(s.created_at);
+      return d.getDate()===now.getDate()&&d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
+    });
+    var totalExos=islandStats.totalExos||0;
+    var mission=islandStats.mission||1;
+    var encourage=totalExos===0?'Pret pour ta 1ere seance ?':
+                  todaySessions.length===0?'Nouvelle seance du jour !':
+                  'Super ! Tu peux faire une autre seance !';
+
+    view.innerHTML=sb()
+      +'<div style="text-align:center;padding:8px 0 4px;">'
+      +'<div style="font-size:44px;margin-bottom:6px;">'+(CURRENT_PROFILE.emoji||'🧒')+'</div>'
+      +'<div style="font-family:var(--fd);font-size:22px;color:var(--ink);">'+CURRENT_PROFILE.name+'</div>'
+      +'<div style="font-family:var(--fa);font-weight:600;font-size:13px;color:var(--ink-soft);margin-bottom:12px;">'+(LEVELS[lvlKey]?LEVELS[lvlKey].label:lvlKey)+' · Mission '+mission+'/3</div>'
+      +'</div>'
+      +'<div style="text-align:center;margin:0 auto 14px;max-width:280px;">'+buildIslandSVG(islandStats)+'</div>'
+      +'<div style="display:flex;gap:10px;margin-bottom:14px;">'
+      +'<div style="flex:1;background:#fff;border-radius:14px;padding:12px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.06);">'
+      +'<div style="font-family:var(--fd);font-size:22px;color:var(--teal);">'+totalExos+'</div>'
+      +'<div style="font-size:11px;color:var(--ink-soft);font-family:var(--fa);font-weight:600;">Exercices</div>'
+      +'</div>'
+      +'<div style="flex:1;background:#fff;border-radius:14px;padding:12px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.06);">'
+      +'<div style="font-family:var(--fd);font-size:22px;color:var(--gold-d);">'+(islandStats.totalPts||0)+'</div>'
+      +'<div style="font-size:11px;color:var(--ink-soft);font-family:var(--fa);font-weight:600;">Points</div>'
+      +'</div>'
+      +'<div style="flex:1;background:#fff;border-radius:14px;padding:12px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.06);">'
+      +'<div style="font-family:var(--fd);font-size:22px;color:var(--purple);">'+todaySessions.length+'</div>'
+      +'<div style="font-size:11px;color:var(--ink-soft);font-family:var(--fa);font-weight:600;">Auj.</div>'
+      +'</div>'
+      +'</div>'
+      +bubble(encourage,'excited')
+      +'<button onclick="startAutoSession()" class="btn btn-green btn-block" style="font-size:20px;padding:18px;margin-bottom:14px;box-shadow:0 6px 0 var(--green-d);">⚡ Commencer la seance !</button>'
+      +(todaySessions.length>0
+        ?'<div style="font-family:var(--fd);font-size:14px;color:var(--ink-soft);margin-bottom:8px;">Seances d\'aujourd\'hui</div>'
+          +todaySessions.map(function(s,i){
+            var exRes=_lsGet('ile_exres_'+s.id)||[];
+            var totalQ=exRes.reduce(function(a,r){return a+r.total;},0);
+            var goodQ=exRes.reduce(function(a,r){return a+r.score;},0);
+            var pct=totalQ>0?Math.round(goodQ/totalQ*100):0;
+            var col=pct>=80?'var(--green)':pct>=60?'var(--gold)':'var(--coral)';
+            return '<div style="background:#fff;border-radius:12px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 6px rgba(0,0,0,.05);">'
+              +'<span style="font-size:20px;">'+(i===0?'🥇':i===1?'🥈':'🥉')+'</span>'
+              +'<div style="flex:1;">'
+              +'<div style="font-family:var(--fd);font-size:13px;color:var(--ink);">'+(s.name||'Seance')+'</div>'
+              +(totalQ>0?'<div style="font-size:11px;color:'+col+';font-family:var(--fa);font-weight:700;">'+goodQ+'/'+totalQ+' bonnes reponses ('+pct+'%)</div>':'<div style="font-size:11px;color:var(--ink-soft);font-family:var(--fa);font-weight:600;">'+s.pts+' pts</div>')
+              +'</div>'
+              +(totalQ>0?'<div style="width:38px;height:38px;border-radius:50%;background:'+col+'22;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:12px;color:'+col+';">'+pct+'%</div>':'')
+              +'</div>';
+          }).join('')
+        :'')
+      +'<div style="margin-top:14px;">'
+      +'<button class="btn btn-outline btn-block" style="font-size:14px;color:var(--purple);" onclick="goTo(\'profiles\')">Changer de profil</button>'
+      +'</div>';
+    return;
+  }
+
   view.innerHTML=sb()+(ST.sName?'<div style="margin:6px 0;display:flex;gap:6px;flex-wrap:wrap;">'
     +'<span style="display:inline-block;background:linear-gradient(135deg,var(--purple-l),var(--purple));color:#fff;font-family:var(--fd);font-size:12px;padding:5px 12px;border-radius:999px;box-shadow:0 3px 0 var(--purple-d);">📂 '+ST.sName+'</span>'
     +(ST.sessionMode==='revision'?'<span style="display:inline-block;background:linear-gradient(135deg,var(--teal-l),var(--teal));color:#fff;font-family:var(--fd);font-size:12px;padding:5px 12px;border-radius:999px;box-shadow:0 3px 0 var(--teal-d);">📚 Révision T'+ST.trimestre+'</span>':'')
@@ -2887,7 +2952,12 @@ async function renderExComplete(){
   var lc2=getLevelContent(levelKey2);
   var exo2=lc2.exosets||genericExosetsForLevel(levelKey2);
   var setKeys=Object.keys(exo2);
-  var btns=setKeys.map(function(k){return '<button class="btn btn-purple" style="font-size:14px;padding:10px 16px;" onclick="startEx(\''+k+'\')">'+exo2[k].icon+' '+exo2[k].label+'</button>';}).join('');
+  // En mode primaire, proposer simplement la matière suivante ou retour à l'île
+  var currentIdx=setKeys.indexOf(ST.exSet);
+  var nextKey=currentIdx>=0&&currentIdx<setKeys.length-1?setKeys[currentIdx+1]:null;
+  var btns=isPrimaire()
+    ?(nextKey?'<button class="btn btn-purple btn-block" onclick="startEx(\''+nextKey+'\')">Continuer → '+exo2[nextKey].icon+' '+exo2[nextKey].label+'</button>':'')
+    :setKeys.map(function(k){return '<button class="btn btn-purple" style="font-size:14px;padding:10px 16px;" onclick="startEx(\''+k+'\')">'+exo2[k].icon+' '+exo2[k].label+'</button>';}).join('');
   var pct=ST.exQs.length>0?Math.round(ST.exCorrect/ST.exQs.length*100):0;
   var medal=pct>=80?'🏆':pct>=60?'⭐':'💪';
   view.innerHTML=sb()+'<div class="cwrap"><div class="czappy">'+zappySVG('excited')+'</div>'
@@ -3227,13 +3297,57 @@ function selectParent(id){
   });
 }
 
+
+var NIVEAUX_PRIMAIRE=['CP','CE1','CE2','CM1','CM2'];
+
+function isPrimaire(){
+  return CURRENT_PROFILE && NIVEAUX_PRIMAIRE.indexOf(CURRENT_PROFILE.level)>=0;
+}
+
+function autoSessionName(){
+  var d=new Date();
+  var pad=function(n){return n<10?'0'+n:n;};
+  return 'Seance du '+pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear()+' '+pad(d.getHours())+'h'+pad(d.getMinutes());
+}
+
+async function startAutoSession(){
+  // Crée une session automatiquement et lance les exercices
+  if(!CURRENT_PROFILE) return;
+  resetSeenQuestions();
+  ST.sName=autoSessionName();
+  ST.pts=0;ST.streak=0;ST.sResults=[];ST.exCorrect=0;
+  ST.sessionMode='revision';
+  ST.trimestre=getCurrentTrimestre();
+  ST.targetLevel=null;
+  CURRENT_SESSION_ID=await createSession(CURRENT_PROFILE.id,{
+    name:ST.sName, mode:'revision',
+    trimestre:ST.trimestre, targetLevel:null
+  });
+  goTo('exercise');
+}
+
+function getCurrentTrimestre(){
+  // Déterminer automatiquement le trimestre selon la date
+  var month=new Date().getMonth()+1; // 1-12
+  if(month>=9||month<=12) return 1;  // Sept-Déc → T1
+  if(month>=1&&month<=3)  return 2;  // Jan-Mar → T2
+  return 3;                           // Avr-Juin → T3
+}
+
 function selectProfile(id){
   getProfiles().then(function(all){
     var p=all.find(function(x){return x.id===id;});
     if(!p) return;
     CURRENT_PROFILE=p;
     ST.pts=0;ST.streak=0;ST.sName='';ST.sResults=[];
-    goTo('login');
+    if(NIVEAUX_PRIMAIRE.indexOf(p.level)>=0){
+      // Primaire : lancer directement les exercices
+      showScreen('dash');
+      renderDash();
+    } else {
+      // Collège/Lycée : écran de configuration
+      goTo('login');
+    }
   });
 }
 
@@ -3528,7 +3642,10 @@ function init(){
   var app=document.getElementById('app');
   app.innerHTML='<div class="view" id="v-profiles"></div><div class="view" id="v-newprofile"></div>'+renderLogin()+renderDiag()+'<div class="view" id="v-quiz"></div><div class="view" id="v-results"></div><div class="view" id="v-dash"></div><div class="view" id="v-exercise"></div><div class="view" id="v-rewards"></div>'+renderIsland()+renderBadges()+'<div class="view" id="v-parent"></div>';
   var dn=document.getElementById('dn');
-  dn.innerHTML=SCREENS.map(function(s){return '<button data-s="'+s+'" onclick="goTo(\''+s+'\')">'+NLABELS[s]+'</button>';}).join('');
+  dn.innerHTML=SCREENS.filter(function(s){
+    // Masquer login et diag dans la nav (accessible via le flux)
+    return s!=='login'&&s!=='diag'&&s!=='quiz'&&s!=='results';
+  }).map(function(s){return '<button data-s="'+s+'" onclick="goTo(\''+s+'\')">'+NLABELS[s]+'</button>';}).join('');
   renderProfiles();
   showScreen('profiles');
 }
