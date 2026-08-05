@@ -2628,6 +2628,7 @@ async function renderDash(){
   var lvlLabel=lvl?lvl.label:'CE2';
   var weaknesses=CURRENT_PROFILE?(await getWeaknessSummary(CURRENT_PROFILE.id)):[];
   var focusText=weaknesses.length>0?weaknesses[0]:'tes priorites';var islandStats=await getIslandStatsForProfile();
+  var lvlKey=CURRENT_PROFILE?CURRENT_PROFILE.level:'';
   var isTerminale=(lvlKey==='TERMINALE');
 
   // ─── MODE PRIMAIRE : interface simplifiée ─────────────
@@ -2972,8 +2973,7 @@ async function renderExComplete(){
     +'<button class="btn btn-gold btn-block" onclick="goTo(\'dash\')" style="max-width:280px;">Retour à l\'île 🏝️</button>'
     +'</div>';
   confetti();
-  // Rafraîchir le tableau de bord et l'île en arrière-plan
-  renderDash();
+  // Rafraîchir l'île en arrière-plan
   updateIsland();
 }
 
