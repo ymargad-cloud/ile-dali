@@ -1933,7 +1933,7 @@ CE2:{
   francais:[
     {q:"Quel est le sujet de : 'Les enfants jouent.'",opts:["Les enfants","jouent","aucun","enfants"],correct:0},
     {q:"Féminin de 'boulanger' ?",opts:["boulangère","boulangeuse","boulangette","boulangeresse"],correct:0},
-    {q:"Trouve le verbe : 'Le chat dort sur le canapé.'",opts:["chat","dort","canapé","sur"],correct:1},
+    {q:"Quel est le verbe dans : 'Le chat dort sur le canapé.'",opts:["le chat","dort","sur","le canapé"],correct:1},
     {q:"Quel mot est mal orthographié ?",opts:["maison","château","cheveaux","soleil"],correct:2},
     {q:"Pluriel de 'cheval' ?",opts:["chevals","chevaux","chevales","cheval"],correct:1},
     {q:"Quel temps : 'demain je mangerai' ?",opts:["présent","passé composé","futur","imparfait"],correct:2},
@@ -1994,12 +1994,12 @@ CE2:{
     {q:"Le tiers de 27 ?",opts:["7","9","8","6"],correct:1},
     {q:"5² = ?",opts:["10","15","25","20"],correct:2},
     {q:"Périmètre rectangle 8cm × 3cm ?",opts:["24cm","22cm","11cm","44cm"],correct:1},
-    {q:"100 - 37 = ?",opts:["63","67","53","73"],correct:0},
+    {q:"100 - 37 = ?",opts:["57","67","63","73"],correct:2},
     {q:"7 × 6 = ?",opts:["36","42","48","56"],correct:1},
     {q:"Aire carré côté 7cm ?",opts:["28cm²","49cm²","14cm²","21cm²"],correct:1},
-    {q:"1/2 de 1 km = ?",opts:["500m","250m","100m","5000m"],correct:0},
+    {q:"La moitié de 1 km = ?",opts:["250m","100m","5000m","500m"],correct:3},
     {q:"45 ÷ 5 = ?",opts:["7","8","9","10"],correct:2},
-    {q:"8 × 9 = ?",opts:["72","81","63","56"],correct:0},
+    {q:"8 × 9 = ?",opts:["63","81","72","56"],correct:2},
     {q:"Lequel est impair ?",opts:["12","24","37","50"],correct:2},
     {q:"0,1 + 0,9 = ?",opts:["0,10","1","1,9","10"],correct:1},
     {q:"Quel est le double de 17 ?",opts:["24","34","28","36"],correct:1},
@@ -2010,7 +2010,7 @@ CE2:{
     {q:"Le quart de 100 ?",opts:["20","25","50","40"],correct:1},
     {q:"Quel nombre est divisible par 3 et par 4 ?",opts:["10","14","24","22"],correct:2},
     {q:"3 × 4 × 2 = ?",opts:["12","18","24","36"],correct:2},
-    {q:"999 + 1 = ?",opts:["1000","999","9991","100"],correct:0},
+    {q:"999 + 1 = ?",opts:["9991","999","100","1000"],correct:3},
     {q:"Périmètre triangle équilatéral côté 6cm ?",opts:["12cm","18cm","24cm","36cm"],correct:1},
     {q:"Combien de g dans 1,5 kg ?",opts:["150g","1500g","15000g","15g"],correct:1}
   ]
@@ -2027,12 +2027,12 @@ CM1:{
     {q:"Suffixe dans 'boulangerie' ?",opts:["boulang","-erie","boulanger","boulan"],correct:1},
     {q:"'Nonobstant' signifie ?",opts:["donc","cependant","parce que","et"],correct:1},
     {q:"Quel est le sujet réel de 'Il est arrivé un train.' ?",opts:["Il","est","un train","arrivé"],correct:2},
-    {q:"Quel est l'homonyme de 'ver' ?",opts:["verre","air","mer","sel"],correct:0},
+    {q:"Lequel est un homonyme de 'ver' (animal) ?",opts:["noir","verre","fleur","pied"],correct:1},
     {q:"'belles' dans 'Les roses sont belles.' est :",opts:["féminin singulier","féminin pluriel","masculin pluriel","masculin singulier"],correct:1},
     {q:"Figure de style : 'Il pleut des cordes.' ?",opts:["comparaison","métaphore","hyperbole","litote"],correct:1},
     {q:"Quel temps : 'je mangeais' ?",opts:["présent","imparfait","passé composé","futur"],correct:1},
     {q:"Passé simple de 'venir', 3ème pers. sing. ?",opts:["vint","venait","est venu","viendra"],correct:0},
-    {q:"Quel est le pluriel de 'bal' ?",opts:["bals","baux","bales","balles"],correct:0},
+    {q:"Quel est le pluriel de 'carnaval' ?",opts:["carnavals","carnavaux","carnavales","carnaval"],correct:0},
     {q:"Quelle est la nature de 'bien' dans 'il mange bien' ?",opts:["adjectif","nom","adverbe","verbe"],correct:2},
     {q:"Quel temps exprime : 'quand il sera arrivé' ?",opts:["futur simple","futur antérieur","présent","passé composé"],correct:1},
     {q:"Quel est le radical de 'courageux' ?",opts:["coura","courage","geux","courageux"],correct:1},
@@ -2417,8 +2417,8 @@ function renderLogin2(){
     +'<input class="inp" id="sni" placeholder="Nom de la session" maxlength="40" style="margin-bottom:12px;"/>'
     +'<div style="font-family:var(--fd);font-size:14px;color:var(--ink);margin-bottom:8px;">🎯 Mode de travail</div>'
     +'<div style="display:flex;gap:8px;margin-bottom:12px;">'
-    +'<button id="modeRevBtn" onclick="setSessionMode(\'revision\')" style="flex:1;font-family:var(--fd);font-size:14px;padding:10px;border-radius:999px;border:none;cursor:pointer;background:linear-gradient(180deg,var(--teal-l),var(--teal));color:#fff;box-shadow:0 4px 0 var(--teal-d);">📚 Révision</button>'
-    +'<button id="modePassBtn" onclick="setSessionMode(\'passeport\')" style="flex:1;font-family:var(--fd);font-size:14px;padding:10px;border-radius:999px;border:3px solid var(--purple);cursor:pointer;background:#fff;color:var(--purple);">🎒 Passeport</button>'
+    +'<button id="modeRevBtn" onclick="setSessionMode(\'revision\')" style="flex:1;font-family:var(--fd);font-size:14px;padding:10px;border-radius:999px;border:none;cursor:pointer;background:'+(ST.sessionMode!=='passeport'?'linear-gradient(180deg,var(--teal-l),var(--teal));color:#fff;box-shadow:0 4px 0 var(--teal-d)':'#fff;color:var(--teal);border:3px solid var(--teal)')+';">📚 Révision</button>'
+    +'<button id="modePassBtn" onclick="setSessionMode(\'passeport\')" style="flex:1;font-family:var(--fd);font-size:14px;padding:10px;border-radius:999px;border:none;cursor:pointer;background:'+(ST.sessionMode==='passeport'?'linear-gradient(180deg,var(--purple-l),var(--purple));color:#fff;box-shadow:0 4px 0 var(--purple-d)':'#fff;color:var(--purple);border:3px solid var(--purple)')+';">🎒 Passeport</button>'
     +'</div>'
     +'<div id="modeRevOpts">'
     +'<div style="font-family:var(--fd);font-size:13px;color:var(--ink-soft);margin-bottom:6px;">Trimestre à réviser</div>'
@@ -2436,7 +2436,20 @@ function renderLogin2(){
     +'<button class="btn btn-outline btn-block" style="color:var(--purple);font-size:14px;margin-bottom:8px;" onclick="openSess()">📋 Historique sessions</button>'
     +'<button class="btn btn-outline btn-block" style="color:var(--ink-soft);font-size:13px;" onclick="goTo(\'profiles\')">↩ Changer de profil</button>'
     +'</div>';
-  ST.targetLevel=levelKeys.filter(function(k){return k!==CURRENT_PROFILE.level;})[0]||null;
+  // Pré-remplir le nom si vide
+  if(ST.sName){
+    var inp=document.getElementById('sni');
+    if(inp && !inp.value) inp.value=ST.sName;
+  }
+  // Initialiser le targetLevel si pas défini
+  if(!ST.targetLevel){
+    ST.targetLevel=levelKeys.filter(function(k){return k!==CURRENT_PROFILE.level;})[0]||null;
+  }
+  // Afficher le bon panneau selon ST.sessionMode
+  var revOpts=document.getElementById('modeRevOpts');
+  var passOpts=document.getElementById('modePassOpts');
+  if(revOpts) revOpts.style.display=ST.sessionMode==='passeport'?'none':'block';
+  if(passOpts) passOpts.style.display=ST.sessionMode==='passeport'?'block':'none';
 }
 
 function setSessionMode(mode){
@@ -3011,11 +3024,27 @@ async function updateIsland(){
 
 function setSessionModeAndGo(mode){
   ST.sessionMode=mode;
-  var btn=document.getElementById('modeRevBtn');
-  var btn2=document.getElementById('modePasBtn');
-  if(btn) btn.style.background=mode==='revision'?'linear-gradient(180deg,var(--teal-l),var(--teal))':'#fff';
-  if(btn2) btn2.style.background=mode==='passeport'?'linear-gradient(180deg,var(--gold-l),var(--gold))':'#fff';
+  // Pré-remplir le nom de session selon le mode
+  var d=new Date();
+  var dateStr=d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear();
+  if(mode==='revision'){
+    ST.sName='Révision T'+ST.trimestre+' — '+dateStr;
+  } else {
+    var lvlKey=CURRENT_PROFILE?CURRENT_PROFILE.level:'';
+    var levelOrder=['CP','CE1','CE2','CM1','CM2','SIXIEME','CINQUIEME','QUATRIEME','TROISIEME','SECONDE','PREMIERE','TERMINALE'];
+    var idx=levelOrder.indexOf(lvlKey);
+    var nextKey=idx>=0&&idx<levelOrder.length-1?levelOrder[idx+1]:null;
+    var nextLabel=nextKey&&LEVELS[nextKey]?LEVELS[nextKey].label:'niveau sup';
+    ST.sName='Passeport '+nextLabel+' — '+dateStr;
+    if(nextKey) ST.targetLevel=nextKey;
+  }
   goTo('login');
+  // Après le rendu, mettre à jour les champs
+  setTimeout(function(){
+    var inp=document.getElementById('sni');
+    if(inp) inp.value=ST.sName;
+    setSessionMode(mode);
+  },50);
 }
 
 function renderBadges(){
