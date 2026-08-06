@@ -310,7 +310,7 @@ body{overscroll-behavior:none;}
 // Vercel injecte automatiquement les variables d'environnement si tu utilises
 // le build system. Pour un fichier statique, colle tes valeurs ici.
 window.__SUPABASE_URL__      = 'https://uklsubesjgaooigrcpem.supabase.co';
-window.__SUPABASE_ANON_KEY__ = 'COLLE_ICI_TA_CLE_ANON';
+window.__SUPABASE_ANON_KEY__ = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrbHN1YmVzamdhb29pZ3JjcGVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2NzE5NjMsImV4cCI6MjEwMTI0Nzk2M30.oOaHDkw8YYT1v4jTzoy_bu4xXqhdS0AmrISGJ65aBmA';
 </script>
 </head>
 <body>
@@ -550,15 +550,18 @@ var SUPABASE_READY = !!(SUPABASE_URL && SUPABASE_ANON_KEY
 
 // ─── Client REST minimaliste ────────────────────────────────────
 var SB = {
-  _h: function() {
-    return {
+  _h: function(extra) {
+    var h = {
       'Content-Type': 'application/json',
       'apikey': SUPABASE_ANON_KEY,
-      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+      'Authorization': 'Bearer ' + (AUTH_TOKEN || SUPABASE_ANON_KEY),
       'Prefer': 'return=representation'
     };
+    if(extra) Object.assign(h, extra);
+    return h;
   },
   _url: function(t) { return SUPABASE_URL + '/rest/v1/' + t; },
+  _auth: function() { return SUPABASE_URL + '/auth/v1'; },
 
   select: async function(table, filters, order, limit) {
     var url = this._url(table) + '?';
@@ -577,7 +580,7 @@ var SB = {
     try {
       var r = await fetch(this._url(table), {
         method: 'POST',
-        headers: Object.assign({}, this._h(), {'Prefer': 'resolution=merge-duplicates,return=representation'}),
+        headers: this._h({'Prefer': 'resolution=merge-duplicates,return=representation'}),
         body: JSON.stringify(data)
       });
       return r.ok ? await r.json() : null;
@@ -595,6 +598,21 @@ var SB = {
     } catch(e) { return null; }
   },
 
+  patch: async function(table, filters, data) {
+    var url = this._url(table) + '?';
+    Object.keys(filters).forEach(function(k) {
+      url += k + '=eq.' + encodeURIComponent(filters[k]) + '&';
+    });
+    try {
+      var r = await fetch(url, {
+        method: 'PATCH',
+        headers: this._h({'Prefer': 'return=minimal'}),
+        body: JSON.stringify(data)
+      });
+      return r.ok;
+    } catch(e) { return false; }
+  },
+
   delete: async function(table, filters) {
     var url = this._url(table) + '?';
     Object.keys(filters).forEach(function(k) {
@@ -604,8 +622,72 @@ var SB = {
       var r = await fetch(url, { method: 'DELETE', headers: this._h() });
       return r.ok;
     } catch(e) { return false; }
+  },
+
+  // ─── AUTH ────────────────────────────────────────────────
+  signUp: async function(email, password, displayName) {
+    try {
+      var r = await fetch(this._auth() + '/signup', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY},
+        body: JSON.stringify({email:email, password:password,
+          data:{display_name:displayName||email.split('@')[0]}})
+      });
+      var d = await r.json();
+      if(d.access_token){ AUTH_TOKEN=d.access_token; AUTH_USER=d.user; _lsSet('ile_auth',{token:d.access_token,user:d.user,refresh:d.refresh_token}); }
+      return d;
+    } catch(e) { return {error:{message:e.message}}; }
+  },
+
+  signIn: async function(email, password) {
+    try {
+      var r = await fetch(this._auth() + '/token?grant_type=password', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY},
+        body: JSON.stringify({email:email, password:password})
+      });
+      var d = await r.json();
+      if(d.access_token){ AUTH_TOKEN=d.access_token; AUTH_USER=d.user; _lsSet('ile_auth',{token:d.access_token,user:d.user,refresh:d.refresh_token}); }
+      return d;
+    } catch(e) { return {error:{message:e.message}}; }
+  },
+
+  signOut: async function() {
+    try {
+      await fetch(this._auth() + '/logout', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+AUTH_TOKEN}
+      });
+    } catch(e) {}
+    AUTH_TOKEN=null; AUTH_USER=null;
+    _lsSet('ile_auth', null);
+  },
+
+  refreshToken: async function() {
+    var saved = _lsGet('ile_auth');
+    if(!saved || !saved.refresh) return false;
+    try {
+      var r = await fetch(this._auth() + '/token?grant_type=refresh_token', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY},
+        body: JSON.stringify({refresh_token:saved.refresh})
+      });
+      var d = await r.json();
+      if(d.access_token){ AUTH_TOKEN=d.access_token; _lsSet('ile_auth',{token:d.access_token,user:d.user,refresh:d.refresh_token}); return true; }
+    } catch(e) {}
+    return false;
   }
 };
+
+// ─── Variables Auth ──────────────────────────────────────────
+var AUTH_TOKEN = null;
+var AUTH_USER  = null;
+
+// Restaurer la session depuis localStorage au démarrage
+(function restoreAuth(){
+  var saved = _lsGet('ile_auth');
+  if(saved && saved.token){ AUTH_TOKEN=saved.token; AUTH_USER=saved.user; }
+})();;
 
 // ─── Fallback localStorage ──────────────────────────────────────
 function _lsGet(k) { try { return JSON.parse(localStorage.getItem(k)||'null'); } catch(e) { return null; } }
@@ -615,7 +697,7 @@ function _lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catc
 async function getProfiles() {
   // Toujours essayer localStorage d'abord comme cache
   var cached = _lsGet('ile_profiles') || [];
-  if (!SUPABASE_READY) return cached;
+  if (!SUPABASE_READY || !AUTH_TOKEN) return cached;
   try {
     var remote = await SB.select('profiles', null, 'created_at');
     if (remote && remote.length > 0) {
@@ -635,11 +717,12 @@ async function saveProfile(p) {
   if (idx >= 0) all[idx] = p; else all.push(p);
   _lsSet('ile_profiles', all);
   // Essayer aussi Supabase si disponible
-  if (SUPABASE_READY) {
+  if (SUPABASE_READY && AUTH_TOKEN) {
     try {
       await SB.upsert('profiles', {
         id: p.id, name: p.name, emoji: p.emoji||'🧒',
-        level: p.level||null, role: p.role||'student', pin: p.pin||null
+        level: p.level||null, role: p.role||'student',
+        owner_id: AUTH_USER ? AUTH_USER.id : null
       });
     } catch(e) {
       console.warn('Supabase saveProfile failed, localStorage used:', e);
@@ -2703,7 +2786,7 @@ async function renderDash(){
           }).join('')
         :'')
       +'<div style="margin-top:14px;">'
-      +'<button class="btn btn-outline btn-block" style="font-size:14px;color:var(--purple);" onclick="goTo(\'profiles\')">Changer de profil</button>'
+      +'<div style="display:flex;gap:8px;">'+'<button class="btn btn-outline" style="flex:1;font-size:14px;color:var(--purple);" onclick="goTo(\'profiles\')">Changer de profil</button>'+(AUTH_USER?'<button class="btn btn-outline" style="flex:1;font-size:14px;color:var(--coral);" onclick="doSignOut()">Déconnexion</button>':'')+'</div>'
       +'</div>';
     return;
   }
@@ -3297,8 +3380,94 @@ function openSess(){ST.ptab='sessions';goTo('parent');}
 // ═══════════════════════════════════════════════
 // ECRAN: SELECTION / CREATION DE PROFIL
 // ═══════════════════════════════════════════════
+
+// ─── Écran d'authentification ────────────────────────────────
+function renderAuth(mode){
+  mode = mode || 'signin';
+  var view = document.getElementById('v-profiles');
+  var isSignup = (mode === 'signup');
+  view.innerHTML =
+    '<div class="hz" style="width:100px;height:100px;">' + zappySVG('excited') + '</div>'
+    + '<div class="ltitle" style="font-size:28px;">L\'Île aux Élèves</div>'
+    + '<div class="lsub" style="margin-bottom:20px;">' + (isSignup ? 'Créer un compte' : 'Connexion') + '</div>'
+    + '<div class="card" style="width:100%;max-width:360px;">'
+    + (isSignup ? '<input class="inp" id="authName" placeholder="Prénom ou pseudo" maxlength="30" style="margin-bottom:10px;"/>' : '')
+    + '<input class="inp" id="authEmail" type="email" placeholder="Email" maxlength="80" style="margin-bottom:10px;"/>'
+    + '<input class="inp" id="authPass" type="password" placeholder="Mot de passe (min. 6 caractères)" maxlength="60" style="margin-bottom:14px;"/>'
+    + '<button class="btn btn-green btn-block" onclick="doAuth(\'' + mode + '\')" style="margin-bottom:10px;">'
+    + (isSignup ? '✅ Créer mon compte' : '🚀 Se connecter') + '</button>'
+    + '<div id="authErr" style="color:var(--coral);font-family:var(--fa);font-weight:700;font-size:13px;min-height:18px;margin-bottom:8px;text-align:center;"></div>'
+    + '<div style="text-align:center;">'
+    + (isSignup
+      ? '<span style="font-family:var(--fa);font-size:13px;color:var(--ink-soft);">Déjà un compte ? </span><button onclick="renderAuth(\'signin\')" style="background:none;border:none;color:var(--teal);font-family:var(--fd);font-size:13px;cursor:pointer;text-decoration:underline;">Se connecter</button>'
+      : '<span style="font-family:var(--fa);font-size:13px;color:var(--ink-soft);">Pas encore de compte ? </span><button onclick="renderAuth(\'signup\')" style="background:none;border:none;color:var(--teal);font-family:var(--fd);font-size:13px;cursor:pointer;text-decoration:underline;">Créer un compte</button>')
+    + '</div></div>';
+}
+
+async function doAuth(mode){
+  var emailEl = document.getElementById('authEmail');
+  var passEl  = document.getElementById('authPass');
+  var errEl   = document.getElementById('authErr');
+  var email   = emailEl ? emailEl.value.trim() : '';
+  var pass    = passEl  ? passEl.value : '';
+  errEl.textContent = '';
+  if(!email || !pass){ errEl.textContent = 'Email et mot de passe requis.'; return; }
+  if(pass.length < 6){ errEl.textContent = 'Mot de passe trop court (min. 6 caractères).'; return; }
+
+  var btn = document.querySelector('.btn-green');
+  if(btn){ btn.disabled=true; btn.textContent='Chargement...'; }
+
+  var result;
+  if(mode === 'signup'){
+    var nameEl = document.getElementById('authName');
+    var name = nameEl ? nameEl.value.trim() : '';
+    result = await SB.signUp(email, pass, name);
+  } else {
+    result = await SB.signIn(email, pass);
+  }
+
+  if(btn){ btn.disabled=false; btn.textContent=(mode==='signup'?'✅ Créer mon compte':'🚀 Se connecter'); }
+
+  if(result.error){
+    var msg = result.error.message || 'Erreur inconnue';
+    if(msg.includes('already registered')) msg = 'Email déjà utilisé. Connectez-vous.';
+    if(msg.includes('Invalid login')) msg = 'Email ou mot de passe incorrect.';
+    if(msg.includes('Email not confirmed')) msg = 'Vérifiez votre email pour confirmer votre compte.';
+    errEl.textContent = msg;
+    return;
+  }
+
+  // Connexion réussie
+  if(mode === 'signup' && result.user && !result.session){
+    errEl.style.color = 'var(--green)';
+    errEl.textContent = '✅ Compte créé ! Vérifiez votre email pour confirmer.';
+    return;
+  }
+
+  // Charger les profils depuis Supabase
+  await renderProfiles();
+}
+
+async function doSignOut(){
+  if(SUPABASE_READY) await SB.signOut();
+  else { AUTH_TOKEN=null; AUTH_USER=null; _lsSet('ile_auth',null); }
+  CURRENT_PROFILE = null;
+  renderAuth('signin');
+  showScreen('profiles');
+}
+
+
 async function renderProfiles(){
   var view=document.getElementById('v-profiles');
+  // Si Supabase est actif et connecté, synchroniser les profils
+  if(SUPABASE_READY && AUTH_TOKEN){
+    try {
+      var remoteProfiles = await SB.select('profiles', null, 'created_at');
+      if(remoteProfiles && remoteProfiles.length > 0){
+        _lsSet('ile_profiles', remoteProfiles);
+      }
+    } catch(e) {}
+  }
   var profiles=await getProfiles();
   var students=profiles.filter(function(p){return (p.role||'student')!=='parent';});
   var parents=profiles.filter(function(p){return p.role==='parent';});
@@ -3324,7 +3493,7 @@ async function renderProfiles(){
 
   view.innerHTML='<div class="hz" style="width:120px;height:120px;">'+zappySVG('excited')+'</div>'
     +'<div class="ltitle" style="font-size:30px;">L\'Ile aux Élèves!</div>'
-    +'<div class="lsub">Qui es-tu aujourd\'hui ? 👋</div>'
+    +(AUTH_USER?'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"><span style="font-family:var(--fa);font-size:12px;color:var(--ink-soft);">'+(AUTH_USER.email||'')+'</span><button onclick="doSignOut()" style="background:none;border:none;color:var(--coral);font-family:var(--fa);font-size:12px;cursor:pointer;">Déconnexion</button></div>':'')+'<div class="lsub">Qui es-tu aujourd\'hui ? 👋</div>'
     +(cards?'<div class="prof-list">'+cards+'</div>':'<p style="font-family:var(--fa);font-weight:600;color:var(--ink-soft);margin:14px 0;">Aucun profil pour l\'instant.</p>')
     +'<button class="btn btn-green btn-block" style="margin-top:14px;max-width:340px;" onclick="goTo(\'newprofile\')">➕ Créer un profil</button>';
 }
@@ -3830,7 +3999,16 @@ function init(){
     // Masquer login et diag dans la nav (accessible via le flux)
     return s!=='login'&&s!=='diag'&&s!=='quiz'&&s!=='results';
   }).map(function(s){return '<button data-s="'+s+'" onclick="goTo(\''+s+'\')">'+NLABELS[s]+'</button>';}).join('');
-  renderProfiles();
+  if(AUTH_TOKEN){
+    // Déjà connecté : aller aux profils
+    renderProfiles();
+  } else if(SUPABASE_READY){
+    // Pas connecté + Supabase dispo : écran de connexion
+    renderAuth('signin');
+  } else {
+    // Pas de Supabase : localStorage direct
+    renderProfiles();
+  }
   showScreen('profiles');
 }
 
