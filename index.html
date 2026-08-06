@@ -781,15 +781,32 @@ async function unlinkStudent(parentId, studentId) {
 // Retourne {id, name, mode, trimestre, target_level, pts, created_at}
 async function getSessionsFor(profileId) {
   var cached = _lsGet('ile_sessions_'+profileId) || [];
-  if (!SUPABASE_READY) return cached;
+  if (!SUPABASE_READY || !AUTH_TOKEN) return cached;
   try {
     var remote = await SB.select('sessions', {profile_id: profileId}, 'created_at');
     if (remote && remote.length > 0) {
       _lsSet('ile_sessions_'+profileId, remote);
       return remote;
     }
+    // Supabase vide mais cache local non vide → syncer vers Supabase
+    if(cached.length > 0) syncSessionsToSupabase(profileId, cached);
     return cached;
   } catch(e) { return cached; }
+}
+
+// Synchronise le cache local vers Supabase si nécessaire
+async function syncSessionsToSupabase(profileId, sessions){
+  for(var i=sessions.length-1;i>=0;i--){
+    var s=sessions[i];
+    if(!s.id||s.id.startsWith('ls_')) continue; // déjà synchronisé ou local
+    try {
+      await SB.upsert('sessions',{
+        id:s.id, profile_id:profileId, name:s.name||'Session',
+        mode:s.mode||'revision', trimestre:s.trimestre||1,
+        target_level:s.target_level||null, pts:s.pts||0
+      });
+    } catch(e){}
+  }
 }
 
 // Crée la session et retourne son id (uuid Supabase ou local)
@@ -806,7 +823,7 @@ async function createSession(profileId, sessionData) {
   all.unshift(s);
   if (all.length > 30) all = all.slice(0, 30);
   _lsSet('ile_sessions_' + profileId, all);
-  if (SUPABASE_READY) {
+  if (SUPABASE_READY && AUTH_TOKEN) {
     try {
       var res = await SB.insert('sessions', {
         profile_id: profileId, name: s.name, mode: s.mode,
@@ -835,14 +852,10 @@ async function updateSessionPts(sessionId, pts) {
     if(found) _lsSet(key, all);
   }
   // Essayer Supabase
-  if (SUPABASE_READY) {
+  if (SUPABASE_READY && AUTH_TOKEN) {
     try {
-      await fetch(SUPABASE_URL + '/rest/v1/sessions?id=eq.'+sessionId, {
-        method: 'PATCH',
-        headers: Object.assign({}, SB._h(), {'Prefer': 'return=minimal'}),
-        body: JSON.stringify({pts: pts})
-      });
-    } catch(e) {}
+      await SB.patch('sessions', {id: sessionId}, {pts: pts});
+    } catch(e) { console.warn('[Ile] updateSessionPts error:', e.message); }
   }
 }
 
@@ -868,8 +881,11 @@ async function saveExerciseResult(sessionId, profileId, subject, subjectLabel, s
   all2.push(r);
   if(all2.length > 200) all2 = all2.slice(-200);
   _lsSet(key2, all2);
-  if (SUPABASE_READY) {
-    try { await SB.insert('exercise_results', r); } catch(e) {}
+  if (SUPABASE_READY && AUTH_TOKEN) {
+    try {
+      var res = await SB.insert('exercise_results', r);
+      if(!res) console.warn('[Ile] saveExerciseResult: insert failed (RLS?)');
+    } catch(e) { console.warn('[Ile] saveExerciseResult error:', e.message); }
   }
 }
 
@@ -892,8 +908,10 @@ async function saveQuestionAnswer(sessionId, profileId, subject, question, optio
   all2.push(qa);
   if(all2.length > 500) all2 = all2.slice(-500);
   _lsSet(key2, all2);
-  if (SUPABASE_READY) {
-    try { await SB.insert('question_answers', qa); } catch(e) {}
+  if (SUPABASE_READY && AUTH_TOKEN) {
+    try {
+      await SB.insert('question_answers', qa);
+    } catch(e) { console.warn('[Ile] saveQuestionAnswer error:', e.message); }
   }
 }
 
@@ -3465,8 +3483,19 @@ async function renderProfiles(){
       var remoteProfiles = await SB.select('profiles', null, 'created_at');
       if(remoteProfiles && remoteProfiles.length > 0){
         _lsSet('ile_profiles', remoteProfiles);
+      } else {
+        // Supabase vide → syncer le localStorage vers Supabase
+        var localProfs = _lsGet('ile_profiles')||[];
+        for(var pi=0;pi<localProfs.length;pi++){
+          var lp=localProfs[pi];
+          if(!lp.owner_id && AUTH_USER){
+            lp.owner_id=AUTH_USER.id;
+            await SB.upsert('profiles',{id:lp.id,name:lp.name,emoji:lp.emoji||'🧒',
+              level:lp.level||null,role:lp.role||'student',owner_id:AUTH_USER.id});
+          }
+        }
       }
-    } catch(e) {}
+    } catch(e) { console.warn('[Ile] sync profiles error:', e.message); }
   }
   var profiles=await getProfiles();
   var students=profiles.filter(function(p){return (p.role||'student')!=='parent';});
@@ -3633,7 +3662,19 @@ function startMissionSubject(){
 }
 
 async function finishMissionSession(){
-  // Toutes les matières de la séance sont terminées
+  // Vérifier que l'id de session est un UUID Supabase (pas ls_XXXX)
+  if(CURRENT_SESSION_ID && CURRENT_SESSION_ID.startsWith('ls_') && SUPABASE_READY && AUTH_TOKEN){
+    try {
+      var res2=await SB.insert('sessions',{
+        profile_id:CURRENT_PROFILE.id, name:ST.sName||'Session',
+        mode:ST.sessionMode||'revision', trimestre:ST.trimestre||1,
+        target_level:ST.targetLevel||null, pts:ST.pts
+      });
+      if(res2&&res2[0]&&res2[0].id){
+        CURRENT_SESSION_ID=res2[0].id;
+      }
+    } catch(e){ console.warn('[Ile] finishMission session fallback:',e.message); }
+  }
   if(CURRENT_SESSION_ID) await updateSessionPts(CURRENT_SESSION_ID,ST.pts);
   confetti();
 
