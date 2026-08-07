@@ -983,7 +983,7 @@ var CURRENT_SESSION_ID = null;
 var CURRENT_STUDENT_ID = null;
 
 var CURRENT_PROFILE=null;
-var ST={pts:0,streak:0,quizIdx:0,quizScore:0,exStep:0,exCorrect:0,exQs:[],exSet:'',ptab:'sessions',plvl:'CE2',sName:'',sResults:[],sessionMode:'revision',trimestre:1,targetLevel:null,missionSubjects:[],missionSubjectIdx:0};
+var ST={pts:0,streak:0,quizIdx:0,quizScore:0,exStep:0,exCorrect:0,exQs:[],exSet:'',ptab:'sessions',plvl:'CE2',sName:'',sResults:[],sessionMode:'revision',trimestre:1,targetLevel:null,missionSubjects:[],missionSubjectIdx:0,diagQuestions:null};
 var SCREENS=["profiles","login","diag","quiz","results","dash","exercise","rewards","island","badges","parent"];
 var NLABELS={"profiles":"0.Profils","login":"1.Connexion","diag":"2.Diagnostic","quiz":"3.Quiz","results":"4.Résultats","dash":"5.Mon île","exercise":"6.Exercice","rewards":"7.Boutique","island":"8.Carte","badges":"9.Badges","parent":"10.Parents"};
 
@@ -1155,24 +1155,19 @@ var DIAGQ_2NDE=[
 ];
 
 function getDiagQForProfile(){
+  // Retourner le set stable stocké dans ST (évite le re-mélange à chaque appel)
+  if(ST.diagQuestions && ST.diagQuestions.length>0) return ST.diagQuestions;
   var levelKey=CURRENT_PROFILE?CURRENT_PROFILE.level:'CE2';
   var base=getDiagQForLevel(levelKey)||[];
-  // Renouveler : mélanger à chaque fois
   var shuffled=base.slice().sort(function(){return Math.random()-.5;});
-  // En mode passeport, mélanger aussi des questions du niveau cible
-  if(ST.sessionMode==='passeport' && ST.targetLevel){
-    var tgtBase=getDiagQForLevel(ST.targetLevel)||[];
-    var tgtShuffled=tgtBase.slice().sort(function(){return Math.random()-.5;});
-    // Alterner : 1 question niveau actuel, 1 question niveau cible
-    var mixed=[];
-    var maxLen=Math.max(shuffled.length,tgtShuffled.length);
-    for(var i=0;i<maxLen;i++){
-      if(i<shuffled.length) mixed.push(shuffled[i]);
-      if(i<tgtShuffled.length) mixed.push(tgtShuffled[i]);
-    }
-    return mixed;
-  }
+  ST.diagQuestions=shuffled;
   return shuffled;
+}
+
+function initDiagQuestions(){
+  // Appelée une seule fois au début du quiz pour fixer les questions
+  ST.diagQuestions=null; // reset
+  getDiagQForProfile();  // remplit ST.diagQuestions
 }
 
 // ═══════════════════════════════════════════════
@@ -2507,7 +2502,7 @@ function goTo(name){
       renderParent();
     }
   }
-  else if(name==='quiz'){ST.quizIdx=0;ST.quizScore=0;ST.quizAnswers=[];renderQuiz();}
+  else if(name==='quiz'){ST.quizIdx=0;ST.quizScore=0;ST.quizAnswers=[];initDiagQuestions();renderQuiz();}
   else if(name==='exercise') renderExMenu();
   else if(name==='island') updateIsland();
   showScreen(name);
